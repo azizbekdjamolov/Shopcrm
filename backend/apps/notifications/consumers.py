@@ -4,7 +4,7 @@ from channels.db import database_sync_to_async
 from django.contrib.auth.models import AnonymousUser
 
 
-class NotificationConsumer(AsyncWebSocketConsumer):
+class NotificationConsumer(AsyncWebsocketConsumer):
     group_name = None
 
     async def connect(self):
@@ -30,7 +30,7 @@ class NotificationConsumer(AsyncWebSocketConsumer):
         }))
 
 
-class BusinessConsumer(AsyncWebSocketConsumer):
+class BusinessConsumer(AsyncWebsocketConsumer):
     group_name = None
 
     async def connect(self):
@@ -88,7 +88,7 @@ class BusinessConsumer(AsyncWebSocketConsumer):
         return None
 
 
-class CourierConsumer(AsyncWebSocketConsumer):
+class CourierConsumer(AsyncWebsocketConsumer):
     group_name = None
 
     async def connect(self):
