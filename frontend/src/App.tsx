@@ -76,11 +76,6 @@ function App() {
 
             <Route element={<PublicLayout />}>
               <Route path="/" element={<PublicOnlyRoute><LandingPage /></PublicOnlyRoute>} />
-              <Route path="/stores" element={<StoresPage />} />
-              <Route path="/stores/:businessId" element={<StoreDetailPage />} />
-              <Route path="/my-orders" element={<MyOrdersPage />} />
-              <Route path="/cart" element={<CartPage />} />
-              <Route path="/profile" element={<CustomerProfilePage />} />
               <Route path="/shop" element={<ShopPage />} />
               <Route path="/shop/:id" element={<ShopProductDetailPage />} />
               <Route path="/shop/cart" element={<CartPage />} />
@@ -90,6 +85,13 @@ function App() {
 
             <Route element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
               <Route path="/dashboard" element={<DashboardPage />} />
+
+              {/* Customer routes */}
+              <Route path="/stores" element={<StoresPage />} />
+              <Route path="/stores/:businessId" element={<StoreDetailPage />} />
+              <Route path="/my-orders" element={<MyOrdersPage />} />
+              <Route path="/cart" element={<CartPage />} />
+              <Route path="/profile" element={<CustomerProfilePage />} />
 
               {/* Owner routes */}
               <Route path="/owner/dashboard" element={<DashboardPage />} />
