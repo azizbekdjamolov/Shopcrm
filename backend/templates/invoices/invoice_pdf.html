@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Invoice #{{ invoice.invoice_number }}</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; font-size: 12px; color: #333; padding: 20px; }
+        .header { display: flex; justify-content: space-between; margin-bottom: 30px; border-bottom: 2px solid #2563eb; padding-bottom: 15px; }
+        .header h1 { font-size: 24px; color: #2563eb; }
+        .header .invoice-info { text-align: right; }
+        .header .invoice-info p { margin: 2px 0; }
+        .section { margin-bottom: 20px; }
+        .section h3 { font-size: 14px; color: #666; margin-bottom: 8px; text-transform: uppercase; }
+        .two-col { display: flex; gap: 40px; }
+        .two-col > div { flex: 1; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th { background: #f3f4f6; padding: 8px 12px; text-align: left; font-size: 11px; text-transform: uppercase; color: #666; border-bottom: 2px solid #e5e7eb; }
+        td { padding: 8px 12px; border-bottom: 1px solid #e5e7eb; }
+        .text-right { text-align: right; }
+        .totals { margin-top: 20px; text-align: right; }
+        .totals table { width: 250px; margin-left: auto; }
+        .totals td { padding: 4px 12px; }
+        .totals .total-row td { font-weight: bold; font-size: 14px; border-top: 2px solid #2563eb; padding-top: 8px; }
+        .footer { margin-top: 40px; padding-top: 15px; border-top: 1px solid #e5e7eb; text-align: center; color: #999; font-size: 10px; }
+        .status { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: bold; text-transform: uppercase; }
+        .status-paid { background: #dcfce7; color: #166534; }
+        .status-pending { background: #fef3c7; color: #92400e; }
+        .status-overdue { background: #fee2e2; color: #991b1b; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div>
+            <h1>{{ business.name }}</h1>
+            <p>{{ business.address }}</p>
+            <p>{{ business.phone }}</p>
+            {% if business.email %}<p>{{ business.email }}</p>{% endif %}
+        </div>
+        <div class="invoice-info">
+            <h1>INVOICE</h1>
+            <p><strong>#{{ invoice.invoice_number }}</strong></p>
+            <p>Date: {{ invoice.created_at|date:"d M Y" }}</p>
+            {% if invoice.due_date %}<p>Due: {{ invoice.due_date|date:"d M Y" }}</p>{% endif %}
+            <p><span class="status status-{{ invoice.status }}">{{ invoice.status }}</span></p>
+        </div>
+    </div>
+
+    <div class="two-col">
+        <div class="section">
+            <h3>Bill To</h3>
+            {% if customer %}
+            <p><strong>{{ customer.name }}</strong></p>
+            <p>{{ customer.phone }}</p>
+            {% if customer.email %}<p>{{ customer.email }}</p>{% endif %}
+            {% if customer.address %}<p>{{ customer.address }}</p>{% endif %}
+            {% else %}
+            <p>Walk-in Customer</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="section">
+        <h3>Items</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Description</th>
+                    <th class="text-right">Qty</th>
+                    <th class="text-right">Price</th>
+                    <th class="text-right">Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in items %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ item.description }}</td>
+                    <td class="text-right">{{ item.quantity }}</td>
+                    <td class="text-right">{{ item.unit_price|floatformat:2 }}</td>
+                    <td class="text-right">{{ item.total|floatformat:2 }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="totals">
+        <table>
+            <tr>
+                <td>Subtotal:</td>
+                <td class="text-right">{{ invoice.subtotal|floatformat:2 }} UZS</td>
+            </tr>
+            {% if invoice.tax_amount > 0 %}
+            <tr>
+                <td>Tax:</td>
+                <td class="text-right">{{ invoice.tax_amount|floatformat:2 }} UZS</td>
+            </tr>
+            {% endif %}
+            <tr class="total-row">
+                <td>Total:</td>
+                <td class="text-right">{{ invoice.total_amount|floatformat:2 }} UZS</td>
+            </tr>
+        </table>
+    </div>
+
+    {% if invoice.notes %}
+    <div class="section" style="margin-top: 30px;">
+        <h3>Notes</h3>
+        <p>{{ invoice.notes }}</p>
+    </div>
+    {% endif %}
+
+    <div class="footer">
+        <p>Thank you for your business!</p>
+        <p>{{ business.name }} &mdash; Business OS</p>
+    </div>
+</body>
+</html>
