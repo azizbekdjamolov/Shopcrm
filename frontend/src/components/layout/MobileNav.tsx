@@ -1,7 +1,8 @@
 import { NavLink } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { LogOut } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { useAuthStore } from '@/stores/authStore'
+import { useAuth } from '@/hooks/useAuth'
 import { ROLE_SIDEBAR_ITEMS } from '@/config/roleRoutes'
 
 const MOBILE_MAX_ITEMS: Record<string, number> = {
@@ -12,7 +13,7 @@ const MOBILE_MAX_ITEMS: Record<string, number> = {
 
 export function MobileNav() {
   const { t } = useTranslation()
-  const { user } = useAuthStore()
+  const { user, logout } = useAuth()
 
   const roleKey = user?.role || 'customer'
   const allItems = ROLE_SIDEBAR_ITEMS[roleKey] || ROLE_SIDEBAR_ITEMS.customer
@@ -40,6 +41,15 @@ export function MobileNav() {
             </NavLink>
           </li>
         ))}
+        <li>
+          <button
+            onClick={() => logout()}
+            className="flex flex-col items-center gap-1 px-3 py-1 text-xs text-gray-500 dark:text-gray-400"
+          >
+            <LogOut className="h-5 w-5" />
+            <span>{t('auth.logout')}</span>
+          </button>
+        </li>
       </ul>
     </nav>
   )

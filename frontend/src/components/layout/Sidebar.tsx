@@ -5,7 +5,7 @@ import {
   ChevronLeft,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { useAuthStore } from '@/stores/authStore'
+import { useAuth } from '@/hooks/useAuth'
 import { useSidebarStore } from '@/stores/sidebarStore'
 import { ROLE_SIDEBAR_ITEMS } from '@/config/roleRoutes'
 import { Avatar } from '@/components/ui/avatar'
@@ -13,7 +13,7 @@ import { Avatar } from '@/components/ui/avatar'
 export function Sidebar() {
   const { t } = useTranslation()
   const navigate = useNavigate()
-  const { user, logout } = useAuthStore()
+  const { user, logout } = useAuth()
   const { isOpen, toggle } = useSidebarStore()
 
   const roleKey = user?.role || 'customer'
@@ -21,7 +21,6 @@ export function Sidebar() {
 
   const handleLogout = async () => {
     await logout()
-    navigate('/login')
   }
 
   return (
