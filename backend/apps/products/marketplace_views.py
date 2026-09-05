@@ -2,7 +2,7 @@ from rest_framework import viewsets, permissions
 from rest_framework.decorators import api_view, permission_classes
 from django.db.models import Avg, Q, Count
 
-from apps.businesses.models import Business
+from apps.businesses.models import Business, BusinessSettings
 from apps.branches.models import BranchSettings
 from apps.products.models import Product, Category
 from apps.core.exceptions import success_response
@@ -15,14 +15,19 @@ def public_store_list(request):
     search = request.query_params.get('search', '')
     category = request.query_params.get('category', '')
     
+    public_ids = BusinessSettings.objects.filter(
+        is_public=True
+    ).values_list('business_id', flat=True)
+    
     businesses = Business.objects.filter(
-        is_active=True
+        is_active=True, id__in=public_ids
     ).select_related('owner')
     
     if search:
-        businesses = businesses.filter(
-            Q(name__icontains=search) | Q(description__icontains=search)
+        search_q = Q(name__icontains=search) | Q(description__icontains=search) | Q(
+            settings__store_name__icontains=search
         )
+        businesses = businesses.filter(search_q)
     
     stores = []
     for b in businesses:
@@ -40,7 +45,6 @@ def public_store_list(request):
             business=b, is_deleted=False, is_active=True
         ).values('id', 'name')[:10])
         
-        from apps.businesses.models import BusinessSettings
         bs = BusinessSettings.objects.filter(business=b).first()
         store_name = bs.store_name if bs and bs.store_name else b.name
         
