@@ -20,6 +20,7 @@ export function MarketplaceSettingsPage() {
   })
 
   const [form, setForm] = useState({
+    store_name: '',
     is_public: false,
     delivery_enabled: false,
     delivery_fee: 0,
@@ -32,6 +33,7 @@ export function MarketplaceSettingsPage() {
   useEffect(() => {
     if (settings) {
       setForm({
+        store_name: settings.store_name || '',
         is_public: settings.is_public,
         delivery_enabled: settings.delivery_enabled,
         delivery_fee: Number(settings.delivery_fee),
@@ -75,6 +77,13 @@ export function MarketplaceSettingsPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
+            <Input
+              label={t('settings.storeName', 'Store Name')}
+              value={form.store_name}
+              onChange={(e) => setForm({ ...form, store_name: e.target.value })}
+              placeholder={t('settings.storeNamePlaceholder', 'Enter your store name...')}
+            />
+
             <label className="flex items-center justify-between rounded-lg border border-gray-200 p-4 dark:border-gray-700">
               <div>
                 <p className="font-medium text-gray-900 dark:text-white">{t('settings.publicStore', 'Public Store')}</p>

@@ -11,6 +11,7 @@ export interface BusinessCreateData {
 
 export interface MarketplaceSettings {
   id: string
+  store_name: string
   is_public: boolean
   delivery_enabled: boolean
   delivery_fee: number

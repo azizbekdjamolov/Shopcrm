@@ -40,9 +40,13 @@ def public_store_list(request):
             business=b, is_deleted=False, is_active=True
         ).values('id', 'name')[:10])
         
+        from apps.businesses.models import BusinessSettings
+        bs = BusinessSettings.objects.filter(business=b).first()
+        store_name = bs.store_name if bs and bs.store_name else b.name
+        
         stores.append({
             'id': str(b.id),
-            'name': b.name,
+            'name': store_name,
             'slug': b.slug,
             'description': b.description,
             'logo': b.logo.url if b.logo else None,
@@ -81,9 +85,13 @@ def public_store_detail(request, business_id):
         p['id'] = str(p['id'])
         p['in_stock'] = p['quantity'] > 0
     
+    from apps.businesses.models import BusinessSettings
+    bs = BusinessSettings.objects.filter(business=business).first()
+    store_name = bs.store_name if bs and bs.store_name else business.name
+    
     return success_response(data={
         'id': str(business.id),
-        'name': business.name,
+        'name': store_name,
         'slug': business.slug,
         'description': business.description,
         'logo': business.logo.url if business.logo else None,

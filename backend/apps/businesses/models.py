@@ -96,6 +96,7 @@ class BusinessSettings(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     business = models.OneToOneField(Business, on_delete=models.CASCADE, related_name='settings')
     extra_data = models.JSONField(default=dict, blank=True)
+    store_name = models.CharField(max_length=255, blank=True, default='', help_text='Public store name shown in the marketplace')
     is_public = models.BooleanField(default=False, help_text='Show store on public marketplace')
     delivery_enabled = models.BooleanField(default=False, help_text='Enable delivery for this store')
     delivery_fee = models.DecimalField(max_digits=12, decimal_places=2, default=0, help_text='Delivery fee in UZS')

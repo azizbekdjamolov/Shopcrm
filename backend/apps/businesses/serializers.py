@@ -75,7 +75,7 @@ class BusinessSettingsSerializer(serializers.ModelSerializer):
     class Meta:
         model = BusinessSettings
         fields = (
-            'id', 'is_public', 'delivery_enabled', 'delivery_fee',
+            'id', 'store_name', 'is_public', 'delivery_enabled', 'delivery_fee',
             'min_order_amount', 'store_description', 'store_phone',
             'store_address', 'extra_data', 'created_at', 'updated_at',
         )
