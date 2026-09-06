@@ -30,6 +30,7 @@ export function ShopProductDetailPage() {
   const handleAddToCart = () => {
     addItem({
       product_id: product.id,
+      business_id: (product as any).business,
       name: product.name,
       selling_price: product.selling_price,
       image: product.image,

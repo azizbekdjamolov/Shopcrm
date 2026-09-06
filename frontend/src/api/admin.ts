@@ -13,8 +13,17 @@ export interface AdminStats {
 
 export const adminApi = {
   getStats: async (): Promise<AdminStats> => {
-    const response = await api.get<AdminStats>('/admin/stats')
-    return response.data
+    const response = await api.get<any>('/platform-admin/dashboard')
+    const d = response.data || {}
+    return {
+      total_businesses: d.total_businesses || 0,
+      total_users: d.total_users || 0,
+      active_subscriptions: d.active_businesses || 0,
+      total_revenue: d.monthly_revenue || d.total_revenue || 0,
+      businesses_by_plan: [],
+      users_by_role: [],
+      revenue_by_month: [],
+    }
   },
 
   getBusinesses: async (params?: {
@@ -22,7 +31,7 @@ export const adminApi = {
     page?: number
     page_size?: number
   }): Promise<PaginatedResponse<Business>> => {
-    const response = await api.get<PaginatedResponse<Business>>('/admin/businesses', { params })
+    const response = await api.get<PaginatedResponse<Business>>('/platform-admin/businesses', { params })
     return response.data
   },
 
@@ -32,7 +41,7 @@ export const adminApi = {
     page?: number
     page_size?: number
   }): Promise<PaginatedResponse<User>> => {
-    const response = await api.get<PaginatedResponse<User>>('/admin/users', { params })
+    const response = await api.get<PaginatedResponse<User>>('/platform-admin/users', { params })
     return response.data
   },
 
@@ -41,17 +50,17 @@ export const adminApi = {
     page?: number
     page_size?: number
   }): Promise<PaginatedResponse<Subscription>> => {
-    const response = await api.get<PaginatedResponse<Subscription>>('/admin/subscriptions', { params })
+    const response = await api.get<PaginatedResponse<Subscription>>('/platform-admin/subscriptions', { params })
     return response.data
   },
 
   toggleBusinessActive: async (id: string): Promise<Business> => {
-    const response = await api.patch<Business>(`/admin/businesses/${id}/toggle`)
+    const response = await api.patch<Business>(`/platform-admin/businesses/${id}/toggle`)
     return response.data
   },
 
   toggleUserActive: async (id: string): Promise<User> => {
-    const response = await api.patch<User>(`/admin/users/${id}/toggle`)
+    const response = await api.patch<User>(`/platform-admin/users/${id}/toggle`)
     return response.data
   },
 }

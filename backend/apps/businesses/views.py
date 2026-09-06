@@ -59,6 +59,9 @@ class BusinessViewSet(viewsets.ModelViewSet):
             user=user, business=business,
             defaults={'role': role, 'is_active': True}
         )
+        if role in ['owner', 'admin', 'manager', 'seller', 'courier']:
+            user.role = role
+            user.save(update_fields=['role'])
         return success_response(data={
             'id': str(bu.id),
             'user_email': user.email,
@@ -80,6 +83,10 @@ class BusinessViewSet(viewsets.ModelViewSet):
             return Response({'error': 'Member not found'}, status=status.HTTP_404_NOT_FOUND)
         membership.role = new_role
         membership.save(update_fields=['role'])
+        if new_role in ['owner', 'admin', 'manager', 'seller', 'courier']:
+            user = membership.user
+            user.role = new_role
+            user.save(update_fields=['role'])
         return success_response(data=BusinessUserSerializer(membership).data)
 
 

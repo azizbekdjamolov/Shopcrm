@@ -82,7 +82,7 @@ class BusinessConsumer(AsyncWebsocketConsumer):
         business = getattr(self.user, '_business', None)
         if business:
             return str(business.id)
-        business_user = self.user.business_users.first()
+        business_user = self.user.business_roles.first()
         if business_user:
             return str(business_user.business.id)
         return None

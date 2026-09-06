@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useQuery } from '@tanstack/react-query'
 import { Truck, Eye } from 'lucide-react'
@@ -12,6 +13,7 @@ import { DeliveryStatus } from '@/types'
 
 export function DeliveryPage() {
   const { t } = useTranslation()
+  const navigate = useNavigate()
   const [page, setPage] = useState(1)
   const [statusFilter, setStatusFilter] = useState('')
 
@@ -52,7 +54,7 @@ export function DeliveryPage() {
         totalItems={data?.total || 0}
         onPageChange={setPage}
         actions={(item) => (
-          <Button variant="ghost" size="icon"><Eye className="h-4 w-4" /></Button>
+          <Button variant="ghost" size="icon" onClick={() => item.order?.id && navigate(`/orders/${item.order.id}`)}><Eye className="h-4 w-4" /></Button>
         )}
       />
     </div>

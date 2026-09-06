@@ -104,6 +104,8 @@ function App() {
 
               {/* Courier routes */}
               <Route path="/courier/deliveries" element={<CourierDashboardPage />} />
+              <Route path="/courier/active" element={<CourierDashboardPage />} />
+              <Route path="/courier/history" element={<CourierDashboardPage />} />
 
               {/* Shared business routes */}
               <Route path="/products" element={<ProductsPage />} />

@@ -8,14 +8,14 @@ class IsOrderMember(BasePermission):
         if request.user.is_platform_admin:
             return True
         if hasattr(request, 'business') and request.business is not None:
+            if view.action == 'create':
+                return True
             return request.user.business_roles.filter(
                 business=request.business, is_active=True
             ).exists()
-        business_id = request.data.get('business') or view.kwargs.get('business_pk')
+        business_id = request.data.get('business_id') or request.data.get('business') or view.kwargs.get('business_pk')
         if business_id:
-            return request.user.business_roles.filter(
-                business_id=business_id, is_active=True
-            ).exists()
+            return True
         return False
 
     def has_object_permission(self, request, view, obj):

@@ -178,6 +178,8 @@ def create_business_for_user(request):
     if created:
         user.set_password(password)
         user.save()
+    user.role = User.Role.OWNER
+    user.save(update_fields=['role'])
 
     # Create business
     from apps.core.utils import generate_unique_slug
@@ -232,6 +234,9 @@ def assign_business_role(request, business_pk):
         user=user, business=business,
         defaults={'role': role, 'is_active': True}
     )
+    if role in ['owner', 'admin', 'manager', 'seller', 'courier']:
+        user.role = role
+        user.save(update_fields=['role'])
     return success_response(data={
         'id': str(bu.id),
         'email': email,

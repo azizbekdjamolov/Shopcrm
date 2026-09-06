@@ -50,6 +50,7 @@ export function StoreDetailPage() {
     }
     addItem({
       product_id: product.id,
+      business_id: businessId,
       name: product.name,
       selling_price: product.selling_price,
       image: product.image,

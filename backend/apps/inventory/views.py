@@ -41,7 +41,7 @@ class InventoryViewSet(viewsets.ModelViewSet):
                 {
                     'id': str(inv.product.id),
                     'name': inv.product.name,
-                    'sku': inv.product.sku,
+                    'barcode': inv.product.barcode,
                     'stock_quantity': inv.quantity,
                     'min_stock': inv.minimum_stock,
                 }

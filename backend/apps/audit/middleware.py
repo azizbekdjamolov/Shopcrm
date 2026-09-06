@@ -6,8 +6,10 @@ from .services import AuditService
 class AuditMiddleware(MiddlewareMixin):
 
     def process_request(self, request):
-        request._audit_ip = self._get_client_ip(request)
-        request._audit_user_agent = request.META.get('HTTP_USER_AGENT', '')
+        request._ip_address = self._get_client_ip(request)
+        request._user_agent = request.META.get('HTTP_USER_AGENT', '')
+        request._audit_ip = request._ip_address
+        request._audit_user_agent = request._user_agent
 
     def process_view(self, request, view_func, view_args, view_kwargs):
         return None

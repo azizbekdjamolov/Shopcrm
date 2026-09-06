@@ -64,7 +64,7 @@ export const expensesApi = {
   },
 
   deleteCategory: async (id: string): Promise<void> => {
-    await api.delete(`/expenses/${id}`)
+    await api.delete(`/expense-categories/${id}`)
   },
 
   getExpenseCategories: async (): Promise<any[]> => {

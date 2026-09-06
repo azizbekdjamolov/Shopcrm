@@ -11,7 +11,7 @@ from .serializers import (
 from .services import OrderService
 from .permissions import IsOrderMember
 from apps.customers.models import Customer
-from apps.businesses.models import Branch
+from apps.businesses.models import Branch, Business
 from apps.products.models import Product
 from apps.core.exceptions import success_response
 from apps.audit.services import AuditService
@@ -41,6 +41,10 @@ class OrderViewSet(viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
         business = getattr(request, 'business', None)
+        if not business and request.data.get('business_id'):
+            business = Business.objects.filter(
+                id=request.data.get('business_id'), is_active=True
+            ).first()
         if not business:
             return success_response(message='Business context required', status_code=400)
         customer = None

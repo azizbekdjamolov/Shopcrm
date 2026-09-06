@@ -36,12 +36,12 @@ export const reportsApi = {
   },
 
   getEmployeeReport: async (params?: ReportParams): Promise<EmployeeReport> => {
-    const response = await api.get<EmployeeReport>('/reports/employees', { params })
+    const response = await api.get<EmployeeReport>('/reports/employee-performance', { params })
     return response.data
   },
 
   getCustomerReport: async (params?: ReportParams): Promise<CustomerReport> => {
-    const response = await api.get<CustomerReport>('/reports/customers', { params })
+    const response = await api.get<CustomerReport>('/reports/courier-performance', { params })
     return response.data
   },
 }
