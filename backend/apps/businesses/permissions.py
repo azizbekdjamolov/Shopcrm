@@ -40,6 +40,11 @@ class IsBusinessOwner(BasePermission):
     def has_object_permission(self, request, view, obj):
         if request.user.is_platform_admin:
             return True
+        from .models import Business
+        if isinstance(obj, Business):
+            return request.user.business_roles.filter(
+                business=obj, role__in=['owner', 'admin'], is_active=True
+            ).exists()
         if hasattr(obj, 'business'):
             return request.user.business_roles.filter(
                 business=obj.business, role__in=['owner', 'admin'], is_active=True
