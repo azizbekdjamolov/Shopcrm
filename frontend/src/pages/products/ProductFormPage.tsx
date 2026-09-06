@@ -2,10 +2,11 @@ import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, Barcode } from 'lucide-react'
 import { productsApi, type ProductCreateData } from '@/api/products'
 import { PageHeader } from '@/components/common/PageHeader'
 import { LoadingState } from '@/components/common/LoadingState'
+import { BarcodeScanner } from '@/components/common/BarcodeScanner'
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -19,6 +20,7 @@ export function ProductFormPage() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const isEdit = !!id
+  const [showScanner, setShowScanner] = useState(false)
 
   const { data: product, isLoading: productLoading } = useQuery({
     queryKey: ['product', id],
@@ -106,11 +108,25 @@ export function ProductFormPage() {
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
                 required
               />
-              <Input
-                label={t('products.barcode')}
-                value={form.barcode}
-                onChange={(e) => setForm({ ...form, barcode: e.target.value })}
-              />
+              <div className="flex items-end gap-2">
+                <div className="flex-1">
+                  <Input
+                    label={t('products.barcode')}
+                    value={form.barcode}
+                    onChange={(e) => setForm({ ...form, barcode: e.target.value })}
+                  />
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="mb-0.5 h-[38px]"
+                  onClick={() => setShowScanner(true)}
+                  title={t('pos.scanBarcode')}
+                >
+                  <Barcode className="h-4 w-4" />
+                </Button>
+              </div>
               <Select
                 label={t('products.category')}
                 value={form.category_id}
@@ -173,6 +189,11 @@ export function ProductFormPage() {
           </CardFooter>
         </Card>
       </form>
+      <BarcodeScanner
+        open={showScanner}
+        onClose={() => setShowScanner(false)}
+        onScan={(code) => setForm((f) => ({ ...f, barcode: code }))}
+      />
     </div>
   )
 }

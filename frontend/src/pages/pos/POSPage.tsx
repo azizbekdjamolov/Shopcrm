@@ -10,6 +10,7 @@ import { productsApi } from '@/api/products'
 import { salesApi, type CreateSaleData } from '@/api/sales'
 import { customersApi } from '@/api/customers'
 import { Button } from '@/components/ui/button'
+import { BarcodeScanner } from '@/components/common/BarcodeScanner'
 import { Input } from '@/components/ui/input'
 import { formatCurrency } from '@/lib/utils'
 import { PaymentMethod } from '@/types'
@@ -66,8 +67,6 @@ export function POSPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>('')
   const [completedSale, setCompletedSale] = useState<CompletedSale | null>(null)
   const searchRef = useRef<HTMLInputElement>(null)
-  const scannerRef = useRef<HTMLDivElement>(null)
-  const scannerInstanceRef = useRef<any>(null)
 
   const { data: products } = useQuery({
     queryKey: ['products', 'pos', search, selectedCategory],
@@ -126,61 +125,8 @@ export function POSPage() {
     }
   }, [products])
 
-  const startScanner = useCallback(async () => {
-    setShowScanner(true)
-    setTimeout(async () => {
-      try {
-        const { Html5Qrcode } = await import('html5-qrcode')
-        if (!scannerRef.current) return
-        if (scannerInstanceRef.current) {
-          try { await scannerInstanceRef.current.stop() } catch {}
-        }
-        const scanner = new Html5Qrcode('barcode-reader')
-        scannerInstanceRef.current = scanner
-        await scanner.start(
-          { facingMode: 'environment' },
-          { fps: 10, qrbox: { width: 250, height: 250 } },
-          async (decodedText) => {
-            try { await scanner.stop() } catch {}
-            setShowScanner(false)
-            const byBarcode = await productsApi.getProductByBarcode(decodedText)
-            if (byBarcode) {
-              addToCart(byBarcode)
-              toast.success(`${t('pos.addedToCart')}: ${byBarcode.name}`)
-              return
-            }
-            const res = await productsApi.getProducts({ search: decodedText, page: 1, page_size: 10, is_active: true })
-            if (res?.items?.length) {
-              const exact = res.items.find((p: any) => p.barcode === decodedText)
-              addToCart(exact || res.items[0])
-              toast.success(`${t('pos.addedToCart')}: ${(exact || res.items[0]).name}`)
-            } else {
-              toast.error(`${t('pos.productNotFound')}: ${decodedText}`)
-            }
-          },
-          () => {}
-        )
-      } catch (err) {
-        toast.error(t('pos.scannerError'))
-        setShowScanner(false)
-      }
-    }, 200)
-  }, [t])
-
-  const stopScanner = useCallback(async () => {
-    if (scannerInstanceRef.current) {
-      try { await scannerInstanceRef.current.stop() } catch {}
-      scannerInstanceRef.current = null
-    }
+  const stopScanner = useCallback(() => {
     setShowScanner(false)
-  }, [])
-
-  useEffect(() => {
-    return () => {
-      if (scannerInstanceRef.current) {
-        try { scannerInstanceRef.current.stop() } catch {}
-      }
-    }
   }, [])
 
   useEffect(() => {
@@ -199,7 +145,7 @@ export function POSPage() {
         } else if (showPayment) {
           setShowPayment(false)
         } else if (showScanner) {
-          stopScanner()
+          setShowScanner(false)
         }
       }
     }
@@ -233,6 +179,23 @@ export function POSPage() {
       ]
     })
   }, [t])
+
+  const handleBarcodeScan = useCallback(async (decodedText: string) => {
+    const byBarcode = await productsApi.getProductByBarcode(decodedText)
+    if (byBarcode) {
+      addToCart(byBarcode)
+      toast.success(`${t('pos.addedToCart')}: ${byBarcode.name}`)
+      return
+    }
+    const res = await productsApi.getProducts({ search: decodedText, page: 1, page_size: 10, is_active: true })
+    if (res?.items?.length) {
+      const exact = res.items.find((p: any) => p.barcode === decodedText)
+      addToCart(exact || res.items[0])
+      toast.success(`${t('pos.addedToCart')}: ${(exact || res.items[0]).name}`)
+    } else {
+      toast.error(`${t('pos.productNotFound')}: ${decodedText}`)
+    }
+  }, [addToCart, t])
 
   const updateQuantity = (productId: string, delta: number) => {
     setCart((prev) =>
@@ -308,7 +271,7 @@ export function POSPage() {
               className="h-11 w-full rounded-lg border border-gray-300 bg-gray-50 pl-10 pr-4 text-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
             />
           </div>
-          <Button variant="outline" size="sm" onClick={startScanner} className="flex items-center gap-2 whitespace-nowrap">
+          <Button variant="outline" size="sm" onClick={() => setShowScanner(true)} className="flex items-center gap-2 whitespace-nowrap">
             <Barcode className="h-4 w-4" />
             <span className="hidden sm:inline">{t('pos.scanBarcode')}</span>
           </Button>
@@ -631,20 +594,11 @@ export function POSPage() {
       )}
 
       {/* BARCODE SCANNER MODAL */}
-      {showScanner && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-          <div className="mx-4 w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl dark:bg-gray-900">
-            <div className="mb-4 flex items-center justify-between">
-              <h3 className="font-bold text-gray-900 dark:text-white">{t('pos.scanBarcode')}</h3>
-              <button onClick={stopScanner} className="rounded-lg p-1 hover:bg-gray-100 dark:hover:bg-gray-800">
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-            <div id="barcode-reader" ref={scannerRef} className="rounded-xl overflow-hidden" />
-            <p className="mt-3 text-center text-xs text-gray-500">{t('pos.scannerHint')}</p>
-          </div>
-        </div>
-      )}
+      <BarcodeScanner
+        open={showScanner}
+        onClose={stopScanner}
+        onScan={handleBarcodeScan}
+      />
 
       {/* RECEIPT MODAL */}
       {completedSale && (
