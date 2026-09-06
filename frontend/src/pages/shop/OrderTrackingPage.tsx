@@ -39,13 +39,13 @@ export function OrderTrackingPage() {
   const [searchInput, setSearchInput] = useState(orderNumber || '')
   const [searchQuery, setSearchQuery] = useState(orderNumber || '')
 
-  const { data: orders, isLoading } = useQuery({
-    queryKey: ['shop-orders', searchQuery],
-    queryFn: () => ordersApi.getOrders({ search: searchQuery, page: 1, page_size: 10 }),
+  const { data: order, isLoading, isError } = useQuery({
+    queryKey: ['shop-order', searchQuery],
+    queryFn: () => ordersApi.trackOrder(searchQuery),
     enabled: !!searchQuery,
+    retry: false,
   })
 
-  const order = orders?.items?.[0]
   const backendStatus = order?.status || ''
   const frontendStatus = REVERSE_STATUS_MAP[backendStatus] || backendStatus.toUpperCase()
   const currentStepIndex = STATUS_STEPS.findIndex((s) => s.key === frontendStatus)
@@ -142,7 +142,14 @@ export function OrderTrackingPage() {
           </div>
         )}
 
-        {!isLoading && searchQuery && !order && (
+        {!isLoading && searchQuery && !order && !isError && (
+          <div className="mt-8 text-center text-gray-500">
+            <Package className="mx-auto h-12 w-12 text-gray-300" />
+            <p className="mt-4">{t('shop.orderNotFound')}</p>
+          </div>
+        )}
+
+        {!isLoading && searchQuery && isError && (
           <div className="mt-8 text-center text-gray-500">
             <Package className="mx-auto h-12 w-12 text-gray-300" />
             <p className="mt-4">{t('shop.orderNotFound')}</p>

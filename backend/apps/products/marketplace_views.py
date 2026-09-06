@@ -34,8 +34,6 @@ def public_store_list(request):
         product_count = Product.objects.filter(
             business=b, is_deleted=False, status='active'
         ).count()
-        if product_count == 0:
-            continue
         
         settings_obj = BranchSettings.objects.filter(
             branch__business=b, branch__is_main=True

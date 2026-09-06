@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { Package, Star, ChevronRight } from 'lucide-react'
 import api from '@/api/client'
+import { ordersApi } from '@/api/orders'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { LoadingState } from '@/components/common/LoadingState'
@@ -27,8 +28,8 @@ const BACKEND_TO_FRONTEND: Record<string, string> = {
 }
 
 async function fetchMyOrders() {
-  const response = await api.get('/orders/', { params: { page: 1, page_size: 50 } })
-  return response.data
+  const data = await ordersApi.getMyOrders({ page: 1, page_size: 50 })
+  return data
 }
 
 async function rateDelivery(data: { delivery_id: string; rating: number; comment: string }) {

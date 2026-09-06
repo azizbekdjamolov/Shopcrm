@@ -32,20 +32,48 @@ export interface CreateOrderData {
   payment_method?: string
 }
 
+function toFrontendOrder(raw: any): Order {
+  return {
+    ...raw,
+    business_id: raw.business_id || raw.business || '',
+    customer_id: raw.customer_id || raw.customer || '',
+    branch_id: raw.branch_id || raw.branch || '',
+    total_amount: raw.total_amount ?? raw.total ?? 0,
+    discount_amount: raw.discount_amount ?? raw.discount ?? 0,
+    tax_amount: raw.tax_amount ?? 0,
+    delivery_fee: raw.delivery_fee ?? 0,
+  }
+}
+
+function normalizeList(data: any): PaginatedResponse<Order> {
+  const items = (data?.items || data?.results || []).map(toFrontendOrder)
+  return { ...data, items, results: items }
+}
+
 export const ordersApi = {
   getOrders: async (params?: OrderFilters): Promise<PaginatedResponse<Order>> => {
     const response = await api.get<PaginatedResponse<Order>>('/orders', { params })
-    return response.data
+    return normalizeList(response.data)
   },
 
   getOrder: async (id: string): Promise<Order> => {
     const response = await api.get<Order>(`/orders/${id}`)
-    return response.data
+    return toFrontendOrder(response.data)
+  },
+
+  trackOrder: async (orderNumber: string): Promise<Order> => {
+    const response = await api.get<Order>('/orders/track/', { params: { order_number: orderNumber } })
+    return toFrontendOrder(response.data)
+  },
+
+  getMyOrders: async (params?: { page?: number; page_size?: number }): Promise<PaginatedResponse<Order>> => {
+    const response = await api.get<PaginatedResponse<Order>>('/orders/my/', params ? { params } : undefined)
+    return normalizeList(response.data)
   },
 
   createOrder: async (data: CreateOrderData): Promise<Order> => {
     const response = await api.post<Order>('/orders', data)
-    return response.data
+    return toFrontendOrder(response.data)
   },
 
   updateOrderStatus: async (id: string, status: OrderStatusType): Promise<Order> => {

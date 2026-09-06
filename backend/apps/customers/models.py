@@ -1,9 +1,17 @@
 import uuid
 from django.db import models
+from django.conf import settings
 from apps.core.models import AbstractBusinessModel
 
 
 class Customer(AbstractBusinessModel):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='customer_profiles',
+    )
     name = models.CharField(max_length=255, db_index=True)
     phone = models.CharField(max_length=20, blank=True, default='', db_index=True)
     email = models.EmailField(blank=True, default='')

@@ -36,6 +36,28 @@ class OrderViewSet(viewsets.ModelViewSet):
             ).select_related('customer', 'branch').prefetch_related('items__product')
         return Order.objects.none()
 
+    @staticmethod
+    def _get_or_create_buyer(user, business):
+        from apps.businesses.models import BusinessUser
+        is_member = BusinessUser.objects.filter(
+            user=user, business=business, is_active=True
+        ).exists()
+        if is_member:
+            return None
+        profile = Customer.objects.filter(
+            user=user, business=business, is_deleted=False
+        ).first()
+        if profile:
+            return profile
+        name = user.full_name or user.email.split('@')[0]
+        return Customer.objects.create(
+            user=user,
+            business=business,
+            name=name,
+            phone=getattr(user, 'phone', '') or '',
+            email=user.email,
+        )
+
     def create(self, request, *args, **kwargs):
         serializer = CreateOrderSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -50,6 +72,8 @@ class OrderViewSet(viewsets.ModelViewSet):
         customer = None
         if data.get('customer_id'):
             customer = get_object_or_404(Customer, id=data['customer_id'], business=business)
+        elif request.user.is_authenticated:
+            customer = self._get_or_create_buyer(request.user, business)
         branch = None
         if data.get('branch_id'):
             branch = get_object_or_404(Branch, id=data['branch_id'], business=business)
@@ -113,6 +137,46 @@ class OrderViewSet(viewsets.ModelViewSet):
             )
         except ValueError as e:
             return success_response(message=str(e), status_code=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=False, methods=['get'], url_path='track')
+    def track(self, request):
+        order_number = (
+            request.query_params.get('order_number')
+            or request.query_params.get('search')
+            or ''
+        ).strip()
+        if not order_number:
+            return success_response(message='Order number required', status_code=400)
+        order = Order.objects.filter(
+            order_number=order_number, is_deleted=False
+        ).select_related('customer', 'branch').prefetch_related('items__product').first()
+        if not order:
+            return success_response(message='Order not found', status_code=404)
+        return success_response(data=OrderSerializer(order).data)
+
+    @action(detail=False, methods=['get'], url_path='my')
+    def my(self, request):
+        user = request.user
+        if not user.is_authenticated:
+            return success_response(data=[], message='Unauthenticated', status_code=401)
+        if user.is_platform_admin:
+            queryset = Order.objects.filter(is_deleted=False)
+        elif user.owned_businesses.exists():
+            queryset = Order.objects.filter(
+                business__in=user.owned_businesses.filter(is_active=True),
+                is_deleted=False,
+            )
+        else:
+            queryset = Order.objects.filter(
+                customer__user=user, is_deleted=False
+            )
+        queryset = queryset.select_related('customer', 'branch').prefetch_related('items__product')
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        serializer = self.get_serializer(queryset, many=True)
+        return success_response(data=serializer.data)
 
     @action(detail=False, methods=['get'])
     def active(self, request):

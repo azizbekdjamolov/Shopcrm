@@ -3,8 +3,12 @@ from rest_framework.permissions import BasePermission
 
 class IsOrderMember(BasePermission):
     def has_permission(self, request, view):
+        if getattr(view, 'action', None) == 'track':
+            return True
         if not request.user or not request.user.is_authenticated:
             return False
+        if getattr(view, 'action', None) == 'my':
+            return True
         if request.user.is_platform_admin:
             return True
         if hasattr(request, 'business') and request.business is not None:
