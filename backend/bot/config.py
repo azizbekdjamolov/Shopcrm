@@ -2,7 +2,10 @@ import os
 from decouple import config
 
 BOT_TOKEN = config('TELEGRAM_BOT_TOKEN', default='')
-API_BASE_URL = config('API_BASE_URL', default='http://localhost:8000/api')
+API_BASE_URL = config(
+    'API_BASE_URL',
+    default=f"http://localhost:{os.environ.get('PORT', '8000')}/api",
+)
 
 LOCALES = {
     'uz': {
