@@ -21,6 +21,8 @@ class Order(AbstractBusinessModel):
         CASH = 'cash', 'Cash'
         CARD = 'card', 'Card'
         ONLINE = 'online', 'Online'
+        CLICK = 'click', 'Click'
+        PAYME = 'payme', 'Payme'
 
     class PaymentStatus(models.TextChoices):
         PENDING = 'pending', 'Pending'

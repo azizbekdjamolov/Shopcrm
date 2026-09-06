@@ -1,14 +1,28 @@
 from rest_framework import serializers
 from .models import Order, OrderItem
+from apps.products.models import Product
+
+
+class OptionalUUIDField(serializers.UUIDField):
+    def to_internal_value(self, data):
+        if data in ('', None):
+            return None
+        try:
+            return super().to_internal_value(data)
+        except serializers.ValidationError:
+            return None
 
 
 class OrderItemSerializer(serializers.ModelSerializer):
     product_name = serializers.CharField(source='product.name', read_only=True)
+    product_id = serializers.PrimaryKeyRelatedField(
+        source='product', queryset=Product.objects.all(), write_only=True
+    )
 
     class Meta:
         model = OrderItem
-        fields = ('id', 'product', 'product_name', 'quantity', 'unit_price', 'total')
-        read_only_fields = ('id', 'total')
+        fields = ('id', 'product', 'product_id', 'product_name', 'quantity', 'unit_price', 'total')
+        read_only_fields = ('id', 'product', 'total')
 
 
 class OrderSerializer(serializers.ModelSerializer):
@@ -32,8 +46,8 @@ class OrderSerializer(serializers.ModelSerializer):
 
 
 class CreateOrderSerializer(serializers.Serializer):
-    customer_id = serializers.UUIDField(required=False, allow_null=True)
-    branch_id = serializers.UUIDField(required=False, allow_null=True)
+    customer_id = OptionalUUIDField(required=False, allow_null=True)
+    branch_id = OptionalUUIDField(required=False, allow_null=True)
     items = OrderItemSerializer(many=True, write_only=True)
     delivery_address = serializers.CharField(required=False, default='')
     delivery_phone = serializers.CharField(required=False, default='')

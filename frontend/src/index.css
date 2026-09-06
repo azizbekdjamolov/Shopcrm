@@ -35,4 +35,24 @@
     background-color: rgba(156, 163, 175, 0.3);
     border-radius: 2px;
   }
+  .leaflet-pin-dot {
+    width: 20px;
+    height: 20px;
+    border-radius: 50% 50% 50% 0;
+    background: #e11d48;
+    border: 2px solid #fff;
+    transform: rotate(-45deg);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  }
+  .leaflet-pin-dot::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%) rotate(45deg);
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #fff;
+  }
 }

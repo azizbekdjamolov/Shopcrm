@@ -5,11 +5,11 @@ import { useMutation } from '@tanstack/react-query'
 import { ArrowLeft, Loader2 } from 'lucide-react'
 import { ordersApi } from '@/api/orders'
 import { useCartStore } from '@/stores/cartStore'
+import { useAuthStore } from '@/stores/authStore'
 import { PageHeader } from '@/components/common/PageHeader'
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
+import { MapAddressPicker } from './MapAddressPicker'
 import { formatCurrency } from '@/lib/utils'
 import toast from 'react-hot-toast'
 
@@ -17,7 +17,8 @@ export function CheckoutPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const { items, getTotal, clearCart } = useCartStore()
-  const [form, setForm] = useState({ full_name: '', phone: '', address: '', city: '', notes: '' })
+  const user = useAuthStore((s) => s.user)
+  const [address, setAddress] = useState(user?.address || '')
   const [paymentMethod, setPaymentMethod] = useState('cash')
 
   const businessId = [...new Set(items.map((item) => item.business_id).filter(Boolean))][0] || undefined
@@ -37,7 +38,14 @@ export function CheckoutPage() {
       navigate(`/shop/track/${order.order_number}`)
     },
     onError: (error: any) => {
-      toast.error(error?.response?.data?.message || t('common.error'))
+      const details = error?.response?.data?.details
+      let msg = error?.response?.data?.message || t('common.error')
+      if (details && typeof details === 'object') {
+        const first = Object.values(details)[0]
+        if (Array.isArray(first)) msg = String(first[0])
+        else if (first) msg = String(first)
+      }
+      toast.error(msg)
     },
   })
 
@@ -45,6 +53,10 @@ export function CheckoutPage() {
     e.preventDefault()
     if (items.length === 0) {
       toast.error(t('shop.cartEmpty'))
+      return
+    }
+    if (!address.trim()) {
+      toast.error(t('shop.addressRequired', 'Manzilni kiriting'))
       return
     }
     orderMutation.mutate({
@@ -55,8 +67,7 @@ export function CheckoutPage() {
       })),
       branch_id: '',
       business_id: businessId,
-      delivery_address: `${form.address}${form.city ? ', ' + form.city : ''}`,
-      delivery_notes: `${form.notes} | Phone: ${form.phone}`,
+      delivery_address: address,
       payment_method: paymentMethod,
     })
   }
@@ -94,11 +105,11 @@ export function CheckoutPage() {
           <Card>
             <CardHeader><CardTitle>{t('shop.shippingAddress')}</CardTitle></CardHeader>
             <CardContent className="space-y-4">
-              <Input label={t('shop.fullName')} value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} required />
-              <Input label={t('shop.phone')} value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} required />
-              <Input label={t('shop.address')} value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} required />
-              <Input label={t('shop.city')} value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} />
-              <Textarea label={t('shop.notes')} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} rows={2} />
+              <MapAddressPicker
+                value={address}
+                onChange={setAddress}
+                placeholder={t('shop.address')}
+              />
             </CardContent>
           </Card>
 
