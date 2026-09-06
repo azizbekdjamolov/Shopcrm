@@ -26,7 +26,9 @@ async function fetchMembers() {
   const businessId = parsed.state?.business?.id
   if (!businessId) return []
   const res = await api.get(`/businesses/${businessId}/members/`)
-  return res.data
+  const data = res.data
+  if (Array.isArray(data)) return data
+  return data?.results || data?.items || []
 }
 
 async function fetchBusiness() {
