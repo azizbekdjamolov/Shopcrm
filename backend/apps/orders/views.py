@@ -19,7 +19,7 @@ from apps.audit.services import AuditService
 
 class OrderViewSet(viewsets.ModelViewSet):
     serializer_class = OrderSerializer
-    permission_classes = [permissions.IsAuthenticated, IsOrderMember]
+    permission_classes = [IsOrderMember]
     filterset_fields = ['status', 'payment_method', 'payment_status', 'customer', 'branch']
     search_fields = ['order_number', 'delivery_address', 'delivery_phone']
     ordering_fields = ['total', 'created_at', 'status']
