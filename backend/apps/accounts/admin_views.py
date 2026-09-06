@@ -203,6 +203,11 @@ def create_business_for_user(request):
         business=business,
         role=BusinessUser.Role.OWNER,
     )
+    from apps.businesses.models import BusinessSettings
+    BusinessSettings.objects.update_or_create(
+        business=business,
+        defaults={'is_public': True, 'store_name': business_name},
+    )
     return success_response(data={
         'business_id': str(business.id),
         'user_id': str(user.id),

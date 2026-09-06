@@ -54,7 +54,7 @@ export const businessesApi = {
     return response.data
   },
 
-  addMember: async (businessId: string, data: { user_id: string; role: string }): Promise<any> => {
+  addMember: async (businessId: string, data: { email: string; role: string }): Promise<any> => {
     const response = await api.post<any>(`/businesses/${businessId}/add_member/`, data)
     return response.data
   },

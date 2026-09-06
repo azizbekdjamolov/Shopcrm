@@ -39,6 +39,22 @@ services:
       - key: TELEGRAM_WEBHOOK_SECRET
         sync: false
 
+  # ===== Telegram Bot (background worker) =====
+  - type: worker
+    name: business-os-bot
+    runtime: python
+    plan: free
+    region: frankfurt
+    rootDir: backend
+    pythonVersion: "3.12"
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "python bot/main.py"
+    envVars:
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: API_BASE_URL
+        value: "https://business-os-backend-170l.onrender.com/api"
+
   # ===== Frontend (React + Vite static build) =====
   - type: web
     name: business-os-web

@@ -18,6 +18,11 @@ from apps.core.exceptions import success_response
 class BusinessViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
+    def get_permissions(self):
+        if self.action in ('add_member', 'update_member_role', 'destroy', 'update', 'partial_update'):
+            return [permissions.IsAuthenticated(), IsBusinessOwner()]
+        return super().get_permissions()
+
     def get_queryset(self):
         if self.request.user.is_platform_admin:
             return Business.objects.all().select_related('owner').prefetch_related('branches')

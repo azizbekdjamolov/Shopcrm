@@ -87,7 +87,7 @@ LOCALES = {
         'lang_changed': "Language changed: English",
         'error': "An error occurred. Try again.",
         'no_products': "No products found",
-        'currency": "UZS",
+        'currency': "UZS",
     },
 }
 
