@@ -8,6 +8,8 @@ type WebSocketMessage = {
 
 type WebSocketHandler = (data: Record<string, unknown>) => void
 
+const WS_BASE = import.meta.env.VITE_API_URL || '/api'
+
 export function useWebSocket(handlers: Record<string, WebSocketHandler>) {
   const wsRef = useRef<WebSocket | null>(null)
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -16,8 +18,17 @@ export function useWebSocket(handlers: Record<string, WebSocketHandler>) {
   const connect = useCallback(() => {
     if (!user) return
 
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-    const wsUrl = `${protocol}//${window.location.host}/ws/business/`
+    let base: string
+    if (WS_BASE.startsWith('http')) {
+      const apiOrigin = WS_BASE.replace(/^https?:\/\//, '')
+      const host = apiOrigin.split('/')[0]
+      const wsProto = WS_BASE.startsWith('https:') ? 'wss:' : 'ws:'
+      base = `${wsProto}//${host}`
+    } else {
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+      base = `${protocol}//${window.location.host}`
+    }
+    const wsUrl = `${base.replace(/\/$/, '')}/ws/business/`
 
     try {
       const ws = new WebSocket(wsUrl)
