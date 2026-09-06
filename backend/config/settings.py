@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'apps.reports',
     'apps.subscriptions',
     'apps.audit',
+    'apps.tgbot',
 ]
 
 MIDDLEWARE = [
@@ -80,6 +81,9 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'config.wsgi.application'
 ASGI_APPLICATION = 'config.asgi.application'
+
+TELEGRAM_BOT_TOKEN = config('TELEGRAM_BOT_TOKEN', default='')
+TELEGRAM_WEBHOOK_SECRET = config('TELEGRAM_WEBHOOK_SECRET', default='')
 
 DATABASE_URL = config('DATABASE_URL', default='')
 

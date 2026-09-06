@@ -37,4 +37,5 @@ urlpatterns = [
     path('api/audit/', include('apps.audit.urls')),
     path('api/platform-admin/', include('apps.accounts.urls_admin')),
     path('api/marketplace/', include('apps.products.urls_marketplace')),
+    path('tg/', include('apps.tgbot.urls')),
 ]

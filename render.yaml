@@ -39,8 +39,8 @@ services:
       - key: TELEGRAM_WEBHOOK_SECRET
         sync: false
 
-  # ===== Telegram Bot (background worker) =====
-  - type: worker
+  # ===== Telegram Bot (webhook in backend service) =====
+  - type: web
     name: business-os-bot
     runtime: python
     plan: free
@@ -48,12 +48,29 @@ services:
     rootDir: backend
     pythonVersion: "3.12"
     buildCommand: "pip install -r requirements.txt"
-    startCommand: "python bot/main.py"
+    startCommand: "sh -c \"python manage.py migrate --noinput && python manage.py collectstatic --noinput && gunicorn config.wsgi:application --bind 0.0.0.0:$PORT --workers 1 --timeout 120\""
     envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: business-os-db
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: "False"
+      - key: ALLOWED_HOSTS
+        value: ".onrender.com"
+      - key: REDIS_URL
+        value: ""
+      - key: CORS_ALLOWED_ORIGINS
+        value: "https://business-os-web-0s8n.onrender.com"
       - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: TELEGRAM_WEBHOOK_SECRET
         sync: false
       - key: API_BASE_URL
         value: "https://business-os-backend-170l.onrender.com/api"
+    healthCheckPath: "/health/"
 
   # ===== Frontend (React + Vite static build) =====
   - type: web

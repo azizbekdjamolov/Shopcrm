@@ -327,12 +327,8 @@ def format_num(n) -> str:
         return str(n)
 
 
-def main() -> None:
-    if not BOT_TOKEN:
-        logger.error("TELEGRAM_BOT_TOKEN not set!")
-        return
-
-    app = Application.builder().token(BOT_TOKEN).build()
+def build_application(token: str = BOT_TOKEN):
+    app = Application.builder().token(token).build()
 
     login_conv = ConversationHandler(
         entry_points=[CommandHandler('login', login_start)],
@@ -366,6 +362,16 @@ def main() -> None:
         filters.TEXT & ~filters.COMMAND & ~filters.Regex("^(O'zbek|Русский|English)$"),
         lambda u, c: None,
     ))
+
+    return app
+
+
+def main() -> None:
+    if not BOT_TOKEN:
+        logger.error("TELEGRAM_BOT_TOKEN not set!")
+        return
+
+    app = build_application()
 
     logger.info("Telegram bot is starting...")
     app.run_polling(drop_pending_updates=True)
