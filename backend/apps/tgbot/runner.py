@@ -20,31 +20,40 @@ class BotRunner:
         self.loop = None
         self.app = None
         self._thread = None
+        self._ready = threading.Event()
         self._started = False
 
     def start(self):
+        """Start (idempotently) and block until the app is ready."""
         if self._started:
-            return
+            self._ready.wait(timeout=30)
+            return self.app is not None
         self._started = True
         self._thread = threading.Thread(
             target=self._run_loop, name='tg-bot-loop', daemon=True
         )
         self._thread.start()
+        if not self._ready.wait(timeout=30):
+            logger.error('Telegram bot did not become ready within 30s')
+        return self.app is not None
 
     def _run_loop(self):
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         self.loop = loop
-        if not BOT_TOKEN:
-            logger.error('TELEGRAM_BOT_TOKEN is not set; bot disabled')
-            return
         try:
-            self.app = build_application(BOT_TOKEN)
-            loop.run_until_complete(self.app.initialize())
+            if not BOT_TOKEN:
+                logger.error('TELEGRAM_BOT_TOKEN is not set; bot disabled')
+                return
+            app = build_application(BOT_TOKEN)
+            loop.run_until_complete(app.initialize())
+            self.app = app
             logger.info('Telegram bot application initialized in webhook mode')
-        except Exception as exc:  # pragma: no cover - defensive startup
-            logger.exception('Failed to initialize telegram bot: %s', exc)
+        except Exception:  # pragma: no cover - defensive startup
+            logger.exception('Failed to initialize telegram bot')
             return
+        finally:
+            self._ready.set()
         loop.run_forever()
 
     def submit(self, update):
