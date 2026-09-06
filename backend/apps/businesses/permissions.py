@@ -26,7 +26,11 @@ class IsBusinessOwner(BasePermission):
     def has_permission(self, request, view):
         if not request.user or not request.user.is_authenticated:
             return False
-        business_id = view.kwargs.get('business_pk') or request.data.get('business')
+        business_id = (
+            view.kwargs.get('business_pk')
+            or view.kwargs.get('pk')
+            or request.data.get('business')
+        )
         if not business_id:
             return request.user.is_platform_admin
         return request.user.business_roles.filter(
