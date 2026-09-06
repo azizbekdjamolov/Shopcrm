@@ -23,13 +23,14 @@ export function CategoriesPage() {
       const res = await productsApi.getCategories()
       return Array.isArray(res) ? res : (res as any)?.results || []
     },
+    refetchOnMount: 'always',
   })
 
   const createMutation = useMutation({
     mutationFn: (data: { name: string }) =>
       editingId ? productsApi.updateCategory(editingId, data) : productsApi.createCategory(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['categories'] })
+    onSuccess: async () => {
+      await queryClient.refetchQueries({ queryKey: ['categories'], type: 'all' })
       toast.success(editingId ? t('common.success') : t('common.success'))
       setShowDialog(false)
       setEditingId(null)

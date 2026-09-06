@@ -32,6 +32,7 @@ export function ProductFormPage() {
       const res = await productsApi.getCategories()
       return Array.isArray(res) ? res : (res as any)?.results || []
     },
+    refetchOnMount: 'always',
   })
 
   const [form, setForm] = useState<ProductCreateData>({
@@ -67,8 +68,8 @@ export function ProductFormPage() {
   const mutation = useMutation({
     mutationFn: (data: ProductCreateData) =>
       isEdit ? productsApi.updateProduct(id!, data) : productsApi.createProduct(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['products'] })
+    onSuccess: async () => {
+      await queryClient.refetchQueries({ queryKey: ['products'], type: 'all' })
       toast.success(isEdit ? t('products.updateSuccess') : t('products.createSuccess'))
       navigate('/products')
     },

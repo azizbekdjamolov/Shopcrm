@@ -23,6 +23,7 @@ export function ProductsPage() {
   const { data, isLoading } = useQuery({
     queryKey: ['products', page, search],
     queryFn: () => productsApi.getProducts({ page, page_size: 20, search: search || undefined }),
+    refetchOnMount: 'always',
   })
 
   const deleteMutation = useMutation({
