@@ -143,6 +143,12 @@ export function POSPage() {
           async (decodedText) => {
             try { await scanner.stop() } catch {}
             setShowScanner(false)
+            const byBarcode = await productsApi.getProductByBarcode(decodedText)
+            if (byBarcode) {
+              addToCart(byBarcode)
+              toast.success(`${t('pos.addedToCart')}: ${byBarcode.name}`)
+              return
+            }
             const res = await productsApi.getProducts({ search: decodedText, page: 1, page_size: 10, is_active: true })
             if (res?.items?.length) {
               const exact = res.items.find((p: any) => p.barcode === decodedText)

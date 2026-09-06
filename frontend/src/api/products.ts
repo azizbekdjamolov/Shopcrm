@@ -79,6 +79,15 @@ export const productsApi = {
     return toFrontendProduct(response.data)
   },
 
+  getProductByBarcode: async (barcode: string): Promise<Product | null> => {
+    try {
+      const response = await api.get<Product>(`/products/barcode/${encodeURIComponent(barcode)}`)
+      return toFrontendProduct(response.data)
+    } catch {
+      return null
+    }
+  },
+
   createProduct: async (data: ProductCreateData): Promise<Product> => {
     const response = await api.post<Product>('/products', toBackendProduct(data))
     return toFrontendProduct(response.data)
