@@ -23,19 +23,34 @@ export function BarcodeScanner({ open, onClose, onScan, title }: BarcodeScannerP
     let cancelled = false
     const timer = setTimeout(async () => {
       try {
-        const { Html5Qrcode } = await import('html5-qrcode')
+        const { Html5Qrcode, Html5QrcodeSupportedFormats } = await import('html5-qrcode')
         if (cancelled || !scannerRef.current) return
         if (scannerInstanceRef.current) {
           try { await scannerInstanceRef.current.stop() } catch {}
           scannerInstanceRef.current = null
         }
         scannerRef.current.innerHTML = ''
-        const scanner = new Html5Qrcode('barcode-scanner-reader')
+        const scanner = new Html5Qrcode('barcode-scanner-reader', {
+          verbose: false,
+          useBarCodeDetectorIfSupported: true,
+          formatsToSupport: [
+            Html5QrcodeSupportedFormats.EAN_13,
+            Html5QrcodeSupportedFormats.EAN_8,
+            Html5QrcodeSupportedFormats.UPC_A,
+            Html5QrcodeSupportedFormats.UPC_E,
+            Html5QrcodeSupportedFormats.CODE_128,
+            Html5QrcodeSupportedFormats.CODE_39,
+            Html5QrcodeSupportedFormats.CODE_93,
+            Html5QrcodeSupportedFormats.ITF,
+            Html5QrcodeSupportedFormats.CODABAR,
+          ],
+        })
         scannerInstanceRef.current = scanner
         await scanner.start(
-          { facingMode: 'environment' },
+          { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } },
           {
-            fps: 15,
+            fps: 10,
+            disableFlip: false,
             qrbox: (viewfinderWidth: number) => {
               const w = Math.min(Math.floor(viewfinderWidth * 0.9), 360)
               return { width: w, height: Math.floor(w * 0.36) }
