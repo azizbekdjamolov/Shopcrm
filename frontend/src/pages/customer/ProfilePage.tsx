@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { User, Mail, Phone, MapPin, Save, Send, Link2, Unlink, Globe, Crown, Sun, Moon, Monitor } from 'lucide-react'
+import { User, Mail, Phone, MapPin, Save, Send, Link2, Unlink, Globe, Crown, Sun, Moon, Monitor, ExternalLink } from 'lucide-react'
 import api from '@/api/client'
 import { useAuthStore } from '@/stores/authStore'
 import { useThemeStore } from '@/stores/themeStore'
@@ -50,20 +50,36 @@ export function CustomerProfilePage() {
   })
 
   const telegramMutation = useMutation({
-    mutationFn: async (data: { telegram_username?: string; action: 'connect' | 'disconnect' }) => {
+    mutationFn: async (data: { telegram_username?: string; telegram_user_id?: string; action: 'connect' | 'disconnect' }) => {
       if (data.action === 'connect') {
-        const res = await api.post('/auth/telegram/connect/', { telegram_username: data.telegram_username })
+        const res = await api.post('/auth/telegram/connect/', {
+          telegram_username: data.telegram_username,
+          telegram_user_id: data.telegram_user_id,
+        })
         return res.data
       } else {
         await api.delete('/auth/telegram/connect/')
-        return { telegram_username: '' }
+        return { telegram_username: '', telegram_user_id: '' }
       }
     },
     onSuccess: (data) => {
-      if (user) setUser({ ...user, telegram_username: data.telegram_username } as any)
+      if (user) setUser({ ...user, telegram_username: data.telegram_username, telegram_user_id: data.telegram_user_id } as any)
       toast.success(t('common.success'))
       setTelegramInput('')
     },
+  })
+
+  const connectBot = useMutation({
+    mutationFn: async () => {
+      const res = await api.post('/auth/telegram/link-token/')
+      return res.data
+    },
+    onSuccess: (data) => {
+      const token = data?.link_token || data?.data?.link_token
+      const botUsername = 'BusinesForShopshopBot'
+      window.open(`https://t.me/${botUsername}?start=${token}`, '_blank')
+    },
+    onError: () => toast.error(t('common.error')),
   })
 
   return (
@@ -188,32 +204,51 @@ export function CustomerProfilePage() {
               {t('profile.telegram', 'Telegram')}
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            {user?.telegram_username ? (
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between rounded-xl border p-4">
+              <div className="flex items-center gap-2">
+                {user?.telegram_user_id || user?.telegram_username ? (
                   <Link2 className="h-4 w-4 text-green-500" />
-                  <span className="text-sm text-gray-900 dark:text-white">@{user.telegram_username}</span>
+                ) : (
+                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 text-blue-600">
+                    <Send className="h-4 w-4" />
+                  </span>
+                )}
+                <div>
+                  <p className="text-sm font-medium text-gray-900 dark:text-white">
+                    {user?.telegram_username ? `@${user.telegram_username}` : t('profile.connectToBot', 'Telegram botga ulanish')}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    {user?.telegram_user_id || user?.telegram_username
+                      ? t('profile.linkedHint', 'Bog‘langan — bot avtomatik taniydi')
+                      : t('profile.connectHint', 'Tugmani bosing va botda avtomatik ulanasiz')}
+                  </p>
                 </div>
+              </div>
+              {user?.telegram_user_id || user?.telegram_username ? (
                 <Button variant="outline" size="sm" onClick={() => telegramMutation.mutate({ action: 'disconnect' })}>
                   <Unlink className="mr-1 h-3 w-3" />
                   {t('profile.disconnect', 'Disconnect')}
                 </Button>
-              </div>
-            ) : (
-              <div className="flex items-center gap-2">
-                <Input
-                  placeholder="@username"
-                  value={telegramInput}
-                  onChange={(e) => setTelegramInput(e.target.value)}
-                  className="flex-1"
-                />
-                <Button onClick={() => telegramMutation.mutate({ telegram_username: telegramInput, action: 'connect' })} disabled={!telegramInput.trim() || telegramMutation.isPending}>
-                  <Link2 className="mr-1 h-3 w-3" />
-                  {t('profile.connect', 'Connect')}
+              ) : (
+                <Button size="sm" onClick={() => connectBot.mutate()} disabled={connectBot.isPending}>
+                  <ExternalLink className="mr-1 h-3 w-3" />
+                  {connectBot.isPending ? t('common.processing') : t('profile.connect', 'Connect')}
                 </Button>
-              </div>
-            )}
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              <Input
+                placeholder="@username (ixtiyoriy)"
+                value={telegramInput}
+                onChange={(e) => setTelegramInput(e.target.value)}
+                className="flex-1"
+              />
+              <Button variant="outline" onClick={() => telegramMutation.mutate({ telegram_username: telegramInput, action: 'connect' })} disabled={!telegramInput.trim() || telegramMutation.isPending}>
+                <Link2 className="mr-1 h-3 w-3" />
+                {t('profile.save', 'Save')}
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>

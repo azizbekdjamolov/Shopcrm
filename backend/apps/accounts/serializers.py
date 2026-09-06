@@ -80,7 +80,7 @@ class UserSerializer(serializers.ModelSerializer):
             'id', 'email', 'first_name', 'last_name', 'full_name', 'phone',
             'business_name', 'avatar', 'role', 'is_platform_admin',
             'preferred_language', 'preferred_theme', 'telegram_username',
-            'date_of_birth', 'address', 'date_joined',
+            'telegram_user_id', 'date_of_birth', 'address', 'date_joined',
         )
         read_only_fields = ('id', 'email', 'role', 'is_platform_admin', 'date_joined')
 

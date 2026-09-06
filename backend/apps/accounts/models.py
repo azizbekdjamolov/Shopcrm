@@ -48,6 +48,7 @@ class User(AbstractUser):
     preferred_theme = models.CharField(max_length=10, default='light', choices=[('light', 'Light'), ('luxury', 'Luxury'), ('dark', 'Dark')])
     telegram_user_id = models.CharField(max_length=50, blank=True, default='')
     telegram_username = models.CharField(max_length=100, blank=True, default='')
+    tg_link_token = models.CharField(max_length=64, blank=True, default='')
     date_of_birth = models.DateField(null=True, blank=True)
     address = models.TextField(blank=True, default='')
 

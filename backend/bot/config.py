@@ -35,6 +35,8 @@ LOCALES = {
         'error': "Xatolik yuz berdi. Qayta urinib ko'ring.",
         'no_products': "Mahsulotlar topilmadi",
         'currency': "so'm",
+        'linked_success': "Telegram hisobingiz sayt akkauntiga muvaffaqiyatli ulandi!",
+        'link_failed': "Ulanish amalga oshmadi. Saytdan qayta urinib ko'ring.",
     },
     'ru': {
         'welcome': "Добро пожаловать в Business OS Bot!\n\nУправляйте бизнесом:",
@@ -63,6 +65,8 @@ LOCALES = {
         'error': "Произошла ошибка. Попробуйте снова.",
         'no_products': "Товары не найдены",
         'currency': "сум",
+        'linked_success': "Ваш Telegram успешно привязан к аккаунту на сайте!",
+        'link_failed': "Не удалось привязать. Попробуйте ещё раз с сайта.",
     },
     'en': {
         'welcome': "Welcome to Business OS Bot!\n\nManage your business:",
@@ -91,6 +95,8 @@ LOCALES = {
         'error': "An error occurred. Try again.",
         'no_products': "No products found",
         'currency': "UZS",
+        'linked_success': "Your Telegram has been linked to your website account!",
+        'link_failed': "Linking failed. Please try again from the website.",
     },
 }
 

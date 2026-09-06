@@ -12,4 +12,6 @@ urlpatterns = [
     path('change-password/', views.ChangePasswordView.as_view(), name='change-password'),
     path('forgot-password/', views.ForgotPasswordView.as_view(), name='forgot-password'),
     path('telegram/connect/', views.TelegramConnectView.as_view(), name='telegram-connect'),
+    path('telegram/link-token/', views.TelegramLinkTokenView.as_view(), name='telegram-link-token'),
+    path('telegram/bot-auth/', views.TelegramBotAuthView.as_view(), name='telegram-bot-auth'),
 ]

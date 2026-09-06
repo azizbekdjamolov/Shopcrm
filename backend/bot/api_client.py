@@ -18,6 +18,22 @@ class APIClient:
         except Exception:
             return None
 
+    def telegram_bot_auth(self, telegram_user_id: int = 0, link_token: str = '') -> dict | None:
+        try:
+            payload = {}
+            if telegram_user_id:
+                payload['telegram_user_id'] = str(telegram_user_id)
+            if link_token:
+                payload['link_token'] = link_token
+            if not payload:
+                return None
+            r = self.client.post(f'{self.base_url}/auth/telegram/bot-auth/', json=payload)
+            if r.status_code == 200:
+                return r.json().get('data')
+            return None
+        except Exception:
+            return None
+
     def get_headers(self, token: str, business_id: str) -> dict:
         return {
             'Authorization': f'Bearer {token}',

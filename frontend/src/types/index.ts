@@ -108,6 +108,7 @@ export interface User {
   is_active: boolean
   is_platform_admin?: boolean
   telegram_username?: string
+  telegram_user_id?: string
   preferred_language?: string
   preferred_theme?: string
   first_name?: string

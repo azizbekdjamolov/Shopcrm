@@ -40,18 +40,57 @@ def main_keyboard(lang: str) -> ReplyKeyboardMarkup:
 async def start(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     user = update.effective_user
     lang = get_lang(ctx)
+    args = ctx.args
 
+    # Deep-link: /start <link_token> from the website "Connect Telegram" button.
+    if args:
+        link_token = args[0].strip()
+        data = api.telegram_bot_auth(telegram_user_id=user.id, link_token=link_token)
+        if data:
+            ctx.user_data['token'] = data['tokens']['access']
+            ctx.user_data['refresh_token'] = data['tokens']['refresh']
+            ctx.user_data['business_id'] = data.get('business', {}).get('id', '') if isinstance(data.get('business'), dict) else ''
+            ctx.user_data['business_name'] = data.get('business', {}).get('name', '') if isinstance(data.get('business'), dict) else ''
+            ctx.user_data['user_name'] = data['user'].get('full_name', user.first_name)
+            ctx.user_data['telegram_id'] = str(user.id)
+            await update.message.reply_text(
+                f"✅ {t('linked_success', lang)}\n"
+                f"👤 {ctx.user_data['user_name']}\n"
+                f"🏢 {ctx.user_data['business_name'] or 'N/A'}"
+            )
+            ctx.user_data['fresh'] = True
+            await update.message.reply_text(
+                t('welcome', lang), reply_markup=main_keyboard(lang),
+            )
+            return
+        else:
+            await update.message.reply_text(t('link_failed', lang))
+
+    # If a previously linked telegram account exists, auto-login.
     if ctx.user_data.get('token'):
         await update.message.reply_text(
             f"Salom, {user.first_name}! {t('welcome', lang)}",
             reply_markup=main_keyboard(lang),
         )
     else:
-        await update.message.reply_text(
-            f"Salom, {user.first_name}! {t('welcome', lang)}\n\n"
-            f"Tizimga kirish uchun: /login\n"
-            f"Yordam: /help",
-        )
+        data = api.telegram_bot_auth(telegram_user_id=user.id)
+        if data:
+            ctx.user_data['token'] = data['tokens']['access']
+            ctx.user_data['refresh_token'] = data['tokens']['refresh']
+            ctx.user_data['business_id'] = data.get('business', {}).get('id', '') if isinstance(data.get('business'), dict) else ''
+            ctx.user_data['business_name'] = data.get('business', {}).get('name', '') if isinstance(data.get('business'), dict) else ''
+            ctx.user_data['user_name'] = data['user'].get('full_name', user.first_name)
+            ctx.user_data['telegram_id'] = str(user.id)
+            await update.message.reply_text(
+                f"Salom, {user.first_name}! {t('welcome', lang)}",
+                reply_markup=main_keyboard(lang),
+            )
+        else:
+            await update.message.reply_text(
+                f"Salom, {user.first_name}! {t('welcome', lang)}\n\n"
+                f"Tizimga kirish uchun: /login\n"
+                f"Yordam: /help",
+            )
 
 
 async def help_cmd(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
