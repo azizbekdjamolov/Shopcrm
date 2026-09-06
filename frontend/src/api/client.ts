@@ -29,6 +29,9 @@ const processQueue = (error: unknown, token: string | null) => {
 
 api.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
+    if (config.url && !config.url.endsWith('/')) {
+      config.url = `${config.url}/`
+    }
     const stored = localStorage.getItem('auth-storage')
     if (stored) {
       try {
