@@ -49,7 +49,7 @@ class OrderViewSet(viewsets.ModelViewSet):
         ).first()
         if profile:
             return profile
-        name = user.full_name or user.email.split('@')[0]
+        name = user.get_full_name() or user.email.split('@')[0]
         return Customer.objects.create(
             user=user,
             business=business,
