@@ -22,6 +22,20 @@ class BotRunner:
         self._thread = None
         self._ready = threading.Event()
         self._started = False
+        self.last_error = ''
+        self.processed_count = 0
+        self.error_count = 0
+
+    def status(self) -> dict:
+        return {
+            'ready': self._ready.is_set(),
+            'started': self._started,
+            'token_set': bool(BOT_TOKEN),
+            'app_set': self.app is not None,
+            'processed_count': self.processed_count,
+            'error_count': self.error_count,
+            'last_error': self.last_error[:400],
+        }
 
     def start(self):
         """Start (idempotently) and block until the app is ready."""
@@ -59,14 +73,20 @@ class BotRunner:
     def submit(self, update):
         if self.app is None or self.loop is None:
             logger.warning('Bot app not ready; dropping update')
-            return
+            self.last_error = 'Bot app not ready'
+            return 'not_ready'
         future = asyncio.run_coroutine_threadsafe(
             self.app.process_update(update), self.loop
         )
         try:
             future.result(timeout=30)
-        except Exception:
+            self.processed_count += 1
+            return 'ok'
+        except Exception as exc:  # pragma: no cover - defensive
             logger.exception('Error while processing telegram update')
+            self.error_count += 1
+            self.last_error = f'{type(exc).__name__}: {exc}'
+            return 'error'
 
 
 bot_runner = BotRunner()

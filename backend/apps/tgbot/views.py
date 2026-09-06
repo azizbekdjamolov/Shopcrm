@@ -38,5 +38,12 @@ def webhook(request, secret):
     if update is None:
         return JsonResponse({'ok': True})
 
-    bot_runner.submit(update)
+    result = bot_runner.submit(update)
+    if result == 'error':
+        return JsonResponse({'ok': False, 'error': bot_runner.last_error}, status=500)
     return JsonResponse({'ok': True})
+
+
+def status(request):
+    bot_runner.start()
+    return JsonResponse(bot_runner.status())
