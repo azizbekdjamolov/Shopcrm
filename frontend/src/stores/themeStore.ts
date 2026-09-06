@@ -1,11 +1,11 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
-type Theme = 'light' | 'dark' | 'system'
+type Theme = 'light' | 'luxury' | 'dark' | 'system'
 
 interface ThemeState {
   theme: Theme
-  resolved: 'light' | 'dark'
+  resolved: 'light' | 'luxury' | 'dark'
   setTheme: (theme: Theme) => void
   toggleTheme: () => void
 }
@@ -15,10 +15,14 @@ function getSystemTheme(): 'light' | 'dark' {
   return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
 }
 
-function applyTheme(resolved: 'light' | 'dark') {
+function applyTheme(resolved: 'light' | 'luxury' | 'dark') {
   const root = document.documentElement
-  root.classList.remove('light', 'dark')
-  root.classList.add(resolved)
+  root.classList.remove('light', 'luxury', 'dark')
+  if (resolved === 'luxury') {
+    root.classList.add('luxury', 'dark')
+  } else {
+    root.classList.add(resolved)
+  }
 }
 
 export const useThemeStore = create<ThemeState>()(
@@ -35,7 +39,7 @@ export const useThemeStore = create<ThemeState>()(
 
       toggleTheme: () => {
         const { resolved } = get()
-        const newResolved = resolved === 'light' ? 'dark' : 'light'
+        const newResolved = resolved === 'light' ? 'luxury' : resolved === 'luxury' ? 'dark' : 'light'
         applyTheme(newResolved)
         set({ theme: newResolved, resolved: newResolved })
       },

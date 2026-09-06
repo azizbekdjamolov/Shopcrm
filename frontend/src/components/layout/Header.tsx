@@ -7,6 +7,7 @@ import {
   Bell,
   Sun,
   Moon,
+  Crown,
   ChevronDown,
   LogOut,
   Settings,
@@ -123,9 +124,9 @@ export function Header() {
         <button
           onClick={toggleTheme}
           className="rounded-lg p-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 dark:text-gray-400"
-          title={resolved === 'dark' ? t('settings.lightMode') : t('settings.darkMode')}
+          title={resolved === 'dark' ? t('settings.lightMode') : resolved === 'luxury' ? t('settings.luxuryMode') : t('settings.darkMode')}
         >
-          {resolved === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+          {resolved === 'dark' ? <Sun className="h-4 w-4" /> : resolved === 'luxury' ? <Crown className="h-4 w-4 text-yellow-500" /> : <Moon className="h-4 w-4" />}
         </button>
 
         <div className="relative" ref={notifRef}>

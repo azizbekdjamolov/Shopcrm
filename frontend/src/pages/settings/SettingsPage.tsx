@@ -66,10 +66,10 @@ export function SettingsPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="font-medium text-gray-900 dark:text-white">{t('settings.theme')}</p>
-              <p className="text-sm text-gray-500">{theme === 'dark' ? t('settings.darkMode') : theme === 'light' ? t('settings.lightMode') : t('settings.systemMode')}</p>
+              <p className="text-sm text-gray-500">{theme === 'luxury' ? t('settings.luxuryMode') : theme === 'dark' ? t('settings.darkMode') : theme === 'light' ? t('settings.lightMode') : t('settings.systemMode')}</p>
             </div>
             <Button variant="outline" onClick={toggleTheme}>
-              {theme === 'dark' ? t('settings.lightMode') : t('settings.darkMode')}
+              {t('settings.changeTheme') || 'Change theme'}
             </Button>
           </div>
         </CardContent>

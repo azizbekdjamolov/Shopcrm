@@ -45,7 +45,7 @@ class User(AbstractUser):
     role = models.CharField(max_length=20, choices=Role.choices, default=Role.CUSTOMER)
     is_platform_admin = models.BooleanField(default=False)
     preferred_language = models.CharField(max_length=10, default='uz')
-    preferred_theme = models.CharField(max_length=10, default='light', choices=[('light', 'Light'), ('dark', 'Dark')])
+    preferred_theme = models.CharField(max_length=10, default='light', choices=[('light', 'Light'), ('luxury', 'Luxury'), ('dark', 'Dark')])
     telegram_user_id = models.CharField(max_length=50, blank=True, default='')
     telegram_username = models.CharField(max_length=100, blank=True, default='')
     date_of_birth = models.DateField(null=True, blank=True)

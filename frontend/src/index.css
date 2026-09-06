@@ -12,6 +12,13 @@
   body {
     @apply bg-white text-gray-900 dark:bg-gray-950 dark:text-gray-100;
   }
+  .luxury body {
+    background: linear-gradient(160deg, #12100b 0%, #1b1708 40%, #10100d 100%);
+    color: #f0e6cf;
+  }
+  .luxury * {
+    border-color: rgb(73 62 32);
+  }
 }
 
 @layer utilities {

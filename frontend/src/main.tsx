@@ -11,7 +11,11 @@ function initTheme() {
       const theme = parsed.state?.theme || 'system'
       const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
       const resolved = theme === 'system' ? (prefersDark ? 'dark' : 'light') : theme
-      document.documentElement.classList.add(resolved)
+      if (resolved === 'luxury') {
+        document.documentElement.classList.add('luxury', 'dark')
+      } else {
+        document.documentElement.classList.add(resolved)
+      }
     } else {
       const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
       document.documentElement.classList.add(prefersDark ? 'dark' : 'light')

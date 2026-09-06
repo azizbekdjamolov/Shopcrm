@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { User, Mail, Phone, MapPin, Save, Send, Link2, Unlink, Globe, Sun, Moon, Monitor } from 'lucide-react'
+import { User, Mail, Phone, MapPin, Save, Send, Link2, Unlink, Globe, Crown, Sun, Moon, Monitor } from 'lucide-react'
 import api from '@/api/client'
 import { useAuthStore } from '@/stores/authStore'
 import { useThemeStore } from '@/stores/themeStore'
@@ -32,6 +32,7 @@ export function CustomerProfilePage() {
   ]
 
   const THEMES = [
+    { value: 'luxury', label: t('settings.luxuryMode', 'Luxury'), icon: Crown },
     { value: 'light', label: t('settings.lightMode', 'Light'), icon: Sun },
     { value: 'dark', label: t('settings.darkMode', 'Dark'), icon: Moon },
     { value: 'system', label: t('settings.systemMode', 'System'), icon: Monitor },
@@ -157,7 +158,7 @@ export function CustomerProfilePage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
               {THEMES.map((t_) => {
                 const Icon = t_.icon
                 return (
