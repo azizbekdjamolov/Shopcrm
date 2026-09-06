@@ -16,15 +16,45 @@ export interface ForgotPasswordRequest {
   email: string
 }
 
+interface BackendTokens {
+  access: string
+  refresh: string
+}
+
+interface AuthResponse {
+  user: User
+  tokens: BackendTokens
+  business?: { id: string; name: string; slug: string } | null
+}
+
+interface LoginResult extends Omit<AuthResponse, 'tokens'> {
+  tokens: AuthTokens
+}
+
+const normalizeTokens = (tokens: BackendTokens): AuthTokens => ({
+  access_token: tokens.access,
+  refresh_token: tokens.refresh,
+  token_type: 'bearer',
+  expires_in: 3600,
+})
+
 export const authApi = {
-  login: async (data: LoginRequest): Promise<{ user: User; tokens: AuthTokens }> => {
-    const response = await api.post<{ user: User; tokens: AuthTokens }>('/auth/login/', data)
-    return response.data
+  login: async (data: LoginRequest): Promise<LoginResult> => {
+    const response = await api.post<AuthResponse>('/auth/login/', data)
+    return {
+      user: response.data.user,
+      tokens: normalizeTokens(response.data.tokens),
+      business: response.data.business,
+    }
   },
 
-  register: async (data: RegisterRequest): Promise<{ user: User; tokens: AuthTokens }> => {
-    const response = await api.post<{ user: User; tokens: AuthTokens }>('/auth/register/', data)
-    return response.data
+  register: async (data: RegisterRequest): Promise<LoginResult> => {
+    const response = await api.post<AuthResponse>('/auth/register/', data)
+    return {
+      user: response.data.user,
+      tokens: normalizeTokens(response.data.tokens),
+      business: response.data.business,
+    }
   },
 
   refreshToken: async (refreshToken: string): Promise<{ access: string; refresh?: string }> => {
