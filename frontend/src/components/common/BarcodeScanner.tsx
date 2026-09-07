@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { X } from 'lucide-react'
+import { Flashlight, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 interface BarcodeScannerProps {
@@ -39,7 +39,30 @@ export function BarcodeScanner({ open, onClose, onScan, title }: BarcodeScannerP
   const instanceRef = useRef<any>(null)
   const [error, setError] = useState('')
   const [attempt, setAttempt] = useState(0)
+  const [torchOn, setTorchOn] = useState(false)
   const startingRef = useRef(false)
+
+  const toggleTorch = async () => {
+    const instance = instanceRef.current
+    if (!instance) return
+    const next = !torchOn
+    try {
+      await instance.applyVideoConstraints({ advanced: [{ torch: next }] })
+      setTorchOn(next)
+    } catch {
+      // torch not supported - ignore
+    }
+  }
+  const tryEnableTorch = async () => {
+    const instance = instanceRef.current
+    if (!instance) return
+    try {
+      await instance.applyVideoConstraints({ advanced: [{ torch: true }] })
+      setTorchOn(true)
+    } catch {
+      setTorchOn(false)
+    }
+  }
 
   useEffect(() => {
     if (!open) return
@@ -92,11 +115,12 @@ export function BarcodeScanner({ open, onClose, onScan, title }: BarcodeScannerP
         try {
           await scanner.start(
             { facingMode: 'environment' },
-            { fps: 12, qrbox },
+            { fps: 15, qrbox },
             onSuccess,
             () => {}
           )
           started = true
+          try { await tryEnableTorch() } catch {}
           break
         } catch (err) {
           lastErr = err
@@ -145,9 +169,22 @@ export function BarcodeScanner({ open, onClose, onScan, title }: BarcodeScannerP
       <div className="mx-4 w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl dark:bg-gray-900">
         <div className="mb-4 flex items-center justify-between">
           <h3 className="font-bold text-gray-900 dark:text-white">{title || t('pos.scanBarcode')}</h3>
-          <button onClick={onClose} className="rounded-lg p-1 hover:bg-gray-100 dark:hover:bg-gray-800">
-            <X className="h-5 w-5" />
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={toggleTorch}
+              title={t('pos.torch')}
+              className={`rounded-lg p-1.5 ${
+                torchOn
+                  ? 'bg-yellow-100 text-yellow-600 dark:bg-yellow-900/30 dark:text-yellow-400'
+                  : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800'
+              }`}
+            >
+              <Flashlight className="h-5 w-5" />
+            </button>
+            <button onClick={onClose} className="rounded-lg p-1 hover:bg-gray-100 dark:hover:bg-gray-800">
+              <X className="h-5 w-5" />
+            </button>
+          </div>
         </div>
         <div
           id="barcode-scanner-reader"

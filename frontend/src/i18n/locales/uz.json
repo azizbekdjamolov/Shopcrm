@@ -296,6 +296,7 @@
     "cameraPermission": "Kameraga ruxsat berilmagan. Brauzer sozlamalaridan ruxsat bering",
     "cameraBusy": "Kamera band. Boshqa dastur ishlatayotgan bo'lishi mumkin",
     "cameraNotFound": "Kamera topilmadi",
+    "torch": "Fanar",
     "scannerHint": "Kamerani shtrix-kodga qarating",
     "selectCustomerForDebt": "Qarz uchun mijozni tanlang",
     "scanOrSearch": "Shtrix-kodni skanerlang yoki mahsulotlarni qidiring",

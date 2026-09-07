@@ -297,6 +297,7 @@
     "cameraPermission": "Camera permission denied. Grant access in your browser settings",
     "cameraBusy": "Camera is busy. Another app may be using it",
     "cameraNotFound": "No camera found",
+    "torch": "Torch",
     "scannerHint": "Point your camera at a barcode",
     "selectCustomerForDebt": "Select a customer for debt payment",
     "scanOrSearch": "Scan a barcode or search products",
