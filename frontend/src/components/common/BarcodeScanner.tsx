@@ -40,28 +40,24 @@ export function BarcodeScanner({ open, onClose, onScan, title }: BarcodeScannerP
   const [error, setError] = useState('')
   const [attempt, setAttempt] = useState(0)
   const [torchOn, setTorchOn] = useState(false)
+  const [torchSupported, setTorchSupported] = useState(false)
   const startingRef = useRef(false)
 
-  const toggleTorch = async () => {
+  const applyTorch = async (next: boolean) => {
     const instance = instanceRef.current
-    if (!instance) return
-    const next = !torchOn
+    if (!instance) return false
     try {
       await instance.applyVideoConstraints({ advanced: [{ torch: next }] })
       setTorchOn(next)
+      return true
     } catch {
-      // torch not supported - ignore
+      return false
     }
   }
-  const tryEnableTorch = async () => {
-    const instance = instanceRef.current
-    if (!instance) return
-    try {
-      await instance.applyVideoConstraints({ advanced: [{ torch: true }] })
-      setTorchOn(true)
-    } catch {
-      setTorchOn(false)
-    }
+
+  const toggleTorch = async () => {
+    const ok = await applyTorch(!torchOn)
+    if (!ok) setTorchSupported(false)
   }
 
   useEffect(() => {
@@ -76,11 +72,6 @@ export function BarcodeScanner({ open, onClose, onScan, title }: BarcodeScannerP
         onClose()
         await onScan(decodedText)
       }
-    }
-
-    const qrbox = (viewfinderWidth: number, viewfinderHeight: number) => {
-      const w = Math.min(Math.floor(viewfinderWidth * 0.9), 360)
-      return { width: w, height: Math.floor(w * 0.36) }
     }
 
     const tryStart = async (mod: any) => {
@@ -115,12 +106,20 @@ export function BarcodeScanner({ open, onClose, onScan, title }: BarcodeScannerP
         try {
           await scanner.start(
             { facingMode: 'environment' },
-            { fps: 15, qrbox },
+            { fps: 15 },
             onSuccess,
             () => {}
           )
           started = true
-          try { await tryEnableTorch() } catch {}
+          try {
+            const caps = scanner.getRunningTrackCapabilities()
+            if (caps && 'torch' in caps) {
+              setTorchSupported(true)
+              applyTorch(true)
+            }
+          } catch {
+            setTorchSupported(false)
+          }
           break
         } catch (err) {
           lastErr = err
@@ -170,17 +169,19 @@ export function BarcodeScanner({ open, onClose, onScan, title }: BarcodeScannerP
         <div className="mb-4 flex items-center justify-between">
           <h3 className="font-bold text-gray-900 dark:text-white">{title || t('pos.scanBarcode')}</h3>
           <div className="flex items-center gap-2">
-            <button
-              onClick={toggleTorch}
-              title={t('pos.torch')}
-              className={`rounded-lg p-1.5 ${
-                torchOn
-                  ? 'bg-yellow-100 text-yellow-600 dark:bg-yellow-900/30 dark:text-yellow-400'
-                  : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800'
-              }`}
-            >
-              <Flashlight className="h-5 w-5" />
-            </button>
+            {torchSupported && (
+              <button
+                onClick={toggleTorch}
+                title={t('pos.torch')}
+                className={`rounded-lg p-1.5 ${
+                  torchOn
+                    ? 'bg-yellow-100 text-yellow-600 dark:bg-yellow-900/30 dark:text-yellow-400'
+                    : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800'
+                }`}
+              >
+                <Flashlight className="h-5 w-5" />
+              </button>
+            )}
             <button onClick={onClose} className="rounded-lg p-1 hover:bg-gray-100 dark:hover:bg-gray-800">
               <X className="h-5 w-5" />
             </button>
