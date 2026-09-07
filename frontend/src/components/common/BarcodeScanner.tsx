@@ -10,27 +10,63 @@ interface BarcodeScannerProps {
   title?: string
 }
 
+async function stopScannerInstance(instance: any) {
+  if (!instance) return
+  try { await instance.stop() } catch {}
+  try { instance.clear() } catch {}
+}
+
+function formatErrorText(t: (key: string) => string, err: unknown) {
+  const msg = (err as any)?.message || (err as any)?.name || ''
+  if (msg.includes('NotAllowedError') || msg.includes('Permission') || msg.includes('permission')) {
+    return t('pos.cameraPermission')
+  }
+  if (msg.includes('NotReadableError') || msg.includes('in use') || msg.includes('busy')) {
+    return t('pos.cameraBusy')
+  }
+  if (msg.includes('NotFoundError') || msg.includes('no camera') || msg.includes('No camera')) {
+    return t('pos.cameraNotFound')
+  }
+  if (msg.includes('OverconstrainedError') || msg.includes('constraint')) {
+    return t('pos.cameraNotFound')
+  }
+  return t('pos.scannerError')
+}
+
 export function BarcodeScanner({ open, onClose, onScan, title }: BarcodeScannerProps) {
   const { t } = useTranslation()
   const scannerRef = useRef<HTMLDivElement>(null)
-  const scannerInstanceRef = useRef<any>(null)
+  const instanceRef = useRef<any>(null)
   const [error, setError] = useState('')
   const [attempt, setAttempt] = useState(0)
+  const startingRef = useRef(false)
 
   useEffect(() => {
     if (!open) return
     setError('')
     let cancelled = false
-    const timer = setTimeout(async () => {
-      try {
-        const { Html5Qrcode, Html5QrcodeSupportedFormats } = await import('html5-qrcode')
-        if (cancelled || !scannerRef.current) return
-        if (scannerInstanceRef.current) {
-          try { await scannerInstanceRef.current.stop() } catch {}
-          scannerInstanceRef.current = null
-        }
-        scannerRef.current.innerHTML = ''
-        const scanner = new Html5Qrcode('barcode-scanner-reader', {
+
+    const onSuccess = async (decodedText: string) => {
+      await stopScannerInstance(instanceRef.current)
+      instanceRef.current = null
+      if (!cancelled) {
+        onClose()
+        await onScan(decodedText)
+      }
+    }
+
+    const qrbox = (viewfinderWidth: number, viewfinderHeight: number) => {
+      const w = Math.min(Math.floor(viewfinderWidth * 0.9), 360)
+      return { width: w, height: Math.floor(w * 0.36) }
+    }
+
+    const tryStart = async (mod: any) => {
+      const el = document.getElementById('barcode-scanner-reader')
+      if (!el) return
+      el.innerHTML = ''
+      const { Html5Qrcode, Html5QrcodeSupportedFormats } = mod
+      const scanConfigs = [
+        {
           verbose: false,
           useBarCodeDetectorIfSupported: true,
           formatsToSupport: [
@@ -44,49 +80,61 @@ export function BarcodeScanner({ open, onClose, onScan, title }: BarcodeScannerP
             Html5QrcodeSupportedFormats.ITF,
             Html5QrcodeSupportedFormats.CODABAR,
           ],
-        })
-        scannerInstanceRef.current = scanner
-        await scanner.start(
-          { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } },
-          {
-            fps: 10,
-            disableFlip: false,
-            qrbox: (viewfinderWidth: number) => {
-              const w = Math.min(Math.floor(viewfinderWidth * 0.9), 360)
-              return { width: w, height: Math.floor(w * 0.36) }
-            },
-          },
-          async (decodedText) => {
-            try { await scanner.stop() } catch {}
-            scannerInstanceRef.current = null
-            onClose()
-            await onScan(decodedText)
-          },
-          () => {
-            if (cancelled) return
-          }
-        )
-      } catch (err) {
-        if (!cancelled) {
-          const msg = (err as any)?.message || ''
-          if (msg.includes('NotAllowedError')) {
-            setError(t('pos.cameraPermission'))
-          } else if (msg.includes('NotReadableError')) {
-            setError(t('pos.cameraBusy'))
-          } else if (msg.includes('NotFoundError')) {
-            setError(t('pos.cameraNotFound'))
-          } else {
-            setError(t('pos.scannerError'))
-          }
+        },
+        undefined,
+      ]
+      let started = false
+      let lastErr: unknown = null
+      for (const cfg of scanConfigs) {
+        if (document.getElementById('barcode-scanner-reader')?.childElementCount) break
+        const scanner = new Html5Qrcode('barcode-scanner-reader', cfg)
+        instanceRef.current = scanner
+        try {
+          await scanner.start(
+            { facingMode: 'environment' },
+            { fps: 12, qrbox },
+            onSuccess,
+            () => {}
+          )
+          started = true
+          break
+        } catch (err) {
+          lastErr = err
+          try { await stopScannerInstance(scanner) } catch {}
+          instanceRef.current = null
+          el.innerHTML = ''
         }
       }
+      if (!started) throw lastErr || new Error('start failed')
+    }
+
+    const timer = setTimeout(async () => {
+      if (startingRef.current) return
+      startingRef.current = true
+      try {
+        const mod = await import('html5-qrcode')
+        try {
+          await tryStart(mod)
+        } catch (err) {
+          if (cancelled || !scannerRef.current) return
+          try { await stopScannerInstance(instanceRef.current) } catch {}
+          instanceRef.current = null
+          if (scannerRef.current) scannerRef.current.innerHTML = ''
+          setError(formatErrorText(t, err))
+        }
+      } catch (err) {
+        if (!cancelled) setError(formatErrorText(t, err))
+      } finally {
+        startingRef.current = false
+      }
     }, 300)
+
     return () => {
       cancelled = true
       clearTimeout(timer)
-      if (scannerInstanceRef.current) {
-        try { scannerInstanceRef.current.stop() } catch {}
-        scannerInstanceRef.current = null
+      if (instanceRef.current) {
+        void stopScannerInstance(instanceRef.current)
+        instanceRef.current = null
       }
     }
   }, [open, onClose, onScan, t, attempt])
