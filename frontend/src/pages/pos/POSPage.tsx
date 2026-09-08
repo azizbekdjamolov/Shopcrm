@@ -78,6 +78,7 @@ export function POSPage() {
       is_active: true,
       category_id: selectedCategory || undefined,
     }),
+    refetchInterval: 30_000,
   })
 
   const { data: customers } = useQuery({
@@ -259,6 +260,15 @@ export function POSPage() {
 
   const handleCheckout = () => {
     if (cart.length === 0) return
+    const currentProducts = products?.items || []
+    for (const item of cart) {
+      const live = currentProducts.find((p: any) => p.id === item.product_id)
+      const available = live ? Number(live.quantity ?? live.stock_quantity ?? 0) : item.stock
+      if (available < item.quantity) {
+        toast.error(`${t('pos.insufficientStock')}: ${item.name} — ${t('products.currentStock', 'Available')}: ${available}`)
+        return
+      }
+    }
     if (paymentMethod === 'cash' && cashReceived < total) {
       toast.error(t('pos.cashInsufficient'))
       return
