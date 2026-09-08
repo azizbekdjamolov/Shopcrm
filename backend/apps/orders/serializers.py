@@ -49,9 +49,9 @@ class CreateOrderSerializer(serializers.Serializer):
     customer_id = OptionalUUIDField(required=False, allow_null=True)
     branch_id = OptionalUUIDField(required=False, allow_null=True)
     items = OrderItemSerializer(many=True, write_only=True)
-    delivery_address = serializers.CharField(required=False, default='')
-    delivery_phone = serializers.CharField(required=False, default='')
-    delivery_notes = serializers.CharField(required=False, default='')
+    delivery_address = serializers.CharField(required=False, default='', allow_blank=True)
+    delivery_phone = serializers.CharField(required=False, default='', allow_blank=True)
+    delivery_notes = serializers.CharField(required=False, default='', allow_blank=True)
     delivery_fee = serializers.DecimalField(max_digits=12, decimal_places=2, default=0)
     discount = serializers.DecimalField(max_digits=12, decimal_places=2, default=0)
     payment_method = serializers.ChoiceField(

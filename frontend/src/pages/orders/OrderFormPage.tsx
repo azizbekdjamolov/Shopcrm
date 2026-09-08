@@ -71,7 +71,15 @@ export function OrderFormPage() {
       toast.error(t('orders.addItem'))
       return
     }
-    createMutation.mutate(form)
+    createMutation.mutate({
+      ...form,
+      branch_id: form.branch_id || undefined,
+      delivery_address: form.delivery_address || undefined,
+      delivery_phone: form.delivery_phone || undefined,
+      delivery_notes: form.delivery_notes || undefined,
+      notes: form.notes || undefined,
+      discount: form.discount_amount || 0,
+    } as any)
   }
 
   return (

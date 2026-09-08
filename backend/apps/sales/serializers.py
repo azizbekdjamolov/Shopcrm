@@ -72,7 +72,7 @@ class CreateSaleSerializer(serializers.Serializer):
     discount = serializers.DecimalField(max_digits=12, decimal_places=2, default=0)
     tax = serializers.DecimalField(max_digits=12, decimal_places=2, default=0)
     payment_method = serializers.ChoiceField(choices=Sale.PaymentMethod.choices, default='cash')
-    notes = serializers.CharField(required=False, default='')
+    notes = serializers.CharField(required=False, default='', allow_blank=True)
 
     def validate_items(self, value):
         if not value:

@@ -27,6 +27,7 @@ export interface CreateOrderData {
   discount_amount?: number
   delivery_fee?: number
   delivery_address?: string
+  delivery_phone?: string
   delivery_notes?: string
   notes?: string
   payment_method?: string
