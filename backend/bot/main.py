@@ -366,6 +366,18 @@ def format_num(n) -> str:
         return str(n)
 
 
+async def unknown_text(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
+    lang = get_lang(ctx)
+    if ctx.user_data.get('token'):
+        await update.message.reply_text(t('help', lang), reply_markup=main_keyboard(lang))
+    else:
+        await update.message.reply_text(
+            f"Tizimga kirish uchun: /start\n"
+            f"Login: /login\n"
+            f"Yordam: /help"
+        )
+
+
 def build_application(token: str = BOT_TOKEN):
     app = Application.builder().token(token).build()
 
@@ -399,7 +411,7 @@ def build_application(token: str = BOT_TOKEN):
 
     app.add_handler(MessageHandler(
         filters.TEXT & ~filters.COMMAND & ~filters.Regex("^(O'zbek|Русский|English)$"),
-        lambda u, c: None,
+        unknown_text,
     ))
 
     return app
