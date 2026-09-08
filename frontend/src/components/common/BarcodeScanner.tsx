@@ -33,31 +33,71 @@ function formatErrorText(t: (key: string) => string, err: unknown) {
   return t('pos.scannerError')
 }
 
+const BARCODE_FORMATS = [
+  'ean_13',
+  'ean_8',
+  'upc_a',
+  'upc_e',
+  'code_128',
+  'code_39',
+  'code_93',
+  'itf',
+  'codabar',
+  'qr_code',
+]
+
+interface NativeScannerResult {
+  stream: MediaStream
+  video: HTMLVideoElement
+  canvas: HTMLCanvasElement
+  ctx: CanvasRenderingContext2D
+  detector: any
+  track: MediaStreamTrack
+}
+
 export function BarcodeScanner({ open, onClose, onScan, title }: BarcodeScannerProps) {
   const { t } = useTranslation()
+  const videoRef = useRef<HTMLVideoElement>(null)
+  const canvasRef = useRef<HTMLCanvasElement>(null)
   const scannerRef = useRef<HTMLDivElement>(null)
-  const instanceRef = useRef<any>(null)
+  const fallbackInstanceRef = useRef<any>(null)
+  const streamRef = useRef<MediaStream | null>(null)
+  const timerRef = useRef<number | null>(null)
   const [error, setError] = useState('')
   const [attempt, setAttempt] = useState(0)
   const [torchOn, setTorchOn] = useState(false)
   const [torchSupported, setTorchSupported] = useState(false)
-  const startingRef = useRef(false)
+  const torchOnRef = useRef(false)
 
-  const applyTorch = async (next: boolean) => {
-    const instance = instanceRef.current
-    if (!instance) return false
+  const setTorch = async (next: boolean) => {
+    const track = streamRef.current?.getVideoTracks()?.[0]
+    if (!track) return
     try {
-      await instance.applyVideoConstraints({ advanced: [{ torch: next }] })
+      const constraints: any = { advanced: [{ torch: next }] }
+      await track.applyConstraints(constraints as MediaTrackConstraints)
+      torchOnRef.current = next
       setTorchOn(next)
-      return true
+      setTorchSupported(true)
     } catch {
-      return false
+      /* torch unsupported on this device */
     }
   }
 
-  const toggleTorch = async () => {
-    const ok = await applyTorch(!torchOn)
-    if (!ok) setTorchSupported(false)
+  const stopStream = () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((tr) => tr.stop())
+      streamRef.current = null
+    }
+    if (timerRef.current !== null) {
+      clearInterval(timerRef.current)
+      timerRef.current = null
+    }
+    if (fallbackInstanceRef.current) {
+      void stopScannerInstance(fallbackInstanceRef.current)
+      fallbackInstanceRef.current = null
+    }
+    const el = document.getElementById('barcode-scanner-reader')
+    if (el) el.innerHTML = ''
   }
 
   useEffect(() => {
@@ -66,99 +106,122 @@ export function BarcodeScanner({ open, onClose, onScan, title }: BarcodeScannerP
     let cancelled = false
 
     const onSuccess = async (decodedText: string) => {
-      await stopScannerInstance(instanceRef.current)
-      instanceRef.current = null
-      if (!cancelled) {
-        onClose()
-        await onScan(decodedText)
-      }
+      if (cancelled) return
+      onClose()
+      await onScan(decodedText)
     }
 
-    const tryStart = async (mod: any) => {
+    const runNative = async (): Promise<NativeScannerResult | null> => {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment' },
+        audio: false,
+      })
+      const video = document.createElement('video')
+      video.setAttribute('autoplay', 'true')
+      video.setAttribute('muted', 'true')
+      video.setAttribute('playsinline', 'true')
+      video.style.width = '100%'
+      video.style.height = '100%'
+      video.style.objectFit = 'cover'
+      const holder = document.getElementById('barcode-scanner-reader')
+      if (!holder) { stream.getTracks().forEach((tr) => tr.stop()); return null }
+      holder.appendChild(video)
+      const canvas = document.createElement('canvas')
+      canvas.style.display = 'none'
+      holder.appendChild(canvas)
+      const ctx = canvas.getContext('2d', { willReadFrequently: true })
+      if (!ctx) { stream.getTracks().forEach((tr) => tr.stop()); return null }
+      video.srcObject = stream
+      await new Promise<void>((resolve, reject) => {
+        const onPlaying = () => { video.removeEventListener('playing', onPlaying); resolve() }
+        video.addEventListener('playing', onPlaying)
+        video.onerror = () => reject(new Error('video error'))
+        void video.play().catch(reject)
+        setTimeout(() => resolve(), 1500)
+      })
+      const detector = new (window as any).BarcodeDetector({ formats: BARCODE_FORMATS })
+      return { stream, video, canvas, ctx, detector, track: stream.getVideoTracks()[0] }
+    }
+
+    const startNativeScanning = async (result: NativeScannerResult) => {
+      const { video, canvas, ctx, detector } = result
+      timerRef.current = window.setInterval(async () => {
+        if (cancelled) return
+        if (video.readyState < 2) return
+        if (canvas.width !== video.videoWidth) canvas.width = video.videoWidth
+        if (canvas.height !== video.videoHeight) canvas.height = video.videoHeight
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
+        try {
+          const barcodes = await detector.detect(canvas)
+          if (barcodes && barcodes.length > 0 && barcodes[0].rawValue) {
+            onSuccess(String(barcodes[0].rawValue).trim())
+          }
+        } catch { /* frame error, keep scanning */ }
+      }, 80)
+    }
+
+    const tryStartHtml5Qrcode = async () => {
       const el = document.getElementById('barcode-scanner-reader')
       if (!el) return
       el.innerHTML = ''
+      const mod = await import('html5-qrcode')
       const { Html5Qrcode, Html5QrcodeSupportedFormats } = mod
-      const scanConfigs = [
-        {
-          verbose: false,
-          useBarCodeDetectorIfSupported: true,
-          formatsToSupport: [
-            Html5QrcodeSupportedFormats.EAN_13,
-            Html5QrcodeSupportedFormats.EAN_8,
-            Html5QrcodeSupportedFormats.UPC_A,
-            Html5QrcodeSupportedFormats.UPC_E,
-            Html5QrcodeSupportedFormats.CODE_128,
-            Html5QrcodeSupportedFormats.CODE_39,
-            Html5QrcodeSupportedFormats.CODE_93,
-            Html5QrcodeSupportedFormats.ITF,
-            Html5QrcodeSupportedFormats.CODABAR,
-          ],
-        },
-        undefined,
-      ]
-      let started = false
-      let lastErr: unknown = null
-      for (const cfg of scanConfigs) {
-        if (document.getElementById('barcode-scanner-reader')?.childElementCount) break
-        const scanner = new Html5Qrcode('barcode-scanner-reader', cfg)
-        instanceRef.current = scanner
-        try {
-          await scanner.start(
-            { facingMode: 'environment' },
-            { fps: 15 },
-            onSuccess,
-            () => {}
-          )
-          started = true
-          try {
-            const caps = scanner.getRunningTrackCapabilities()
-            if (caps && 'torch' in caps) {
-              setTorchSupported(true)
-              applyTorch(true)
-            }
-          } catch {
-            setTorchSupported(false)
-          }
-          break
-        } catch (err) {
-          lastErr = err
-          try { await stopScannerInstance(scanner) } catch {}
-          instanceRef.current = null
-          el.innerHTML = ''
-        }
-      }
-      if (!started) throw lastErr || new Error('start failed')
+      const scanner = new Html5Qrcode('barcode-scanner-reader', {
+        verbose: false,
+        useBarCodeDetectorIfSupported: true,
+        formatsToSupport: [
+          Html5QrcodeSupportedFormats.EAN_13,
+          Html5QrcodeSupportedFormats.EAN_8,
+          Html5QrcodeSupportedFormats.UPC_A,
+          Html5QrcodeSupportedFormats.UPC_E,
+          Html5QrcodeSupportedFormats.CODE_128,
+          Html5QrcodeSupportedFormats.CODE_39,
+          Html5QrcodeSupportedFormats.CODE_93,
+          Html5QrcodeSupportedFormats.ITF,
+          Html5QrcodeSupportedFormats.CODABAR,
+          Html5QrcodeSupportedFormats.QR_CODE,
+        ],
+      })
+      fallbackInstanceRef.current = scanner
+      await scanner.start(
+        { facingMode: 'environment' },
+        { fps: 20 },
+        onSuccess,
+        () => {}
+      )
     }
 
-    const timer = setTimeout(async () => {
-      if (startingRef.current) return
-      startingRef.current = true
+    const start = async () => {
       try {
-        const mod = await import('html5-qrcode')
-        try {
-          await tryStart(mod)
-        } catch (err) {
-          if (cancelled || !scannerRef.current) return
-          try { await stopScannerInstance(instanceRef.current) } catch {}
-          instanceRef.current = null
-          if (scannerRef.current) scannerRef.current.innerHTML = ''
+        if ('BarcodeDetector' in window) {
+          try {
+            const result = await runNative()
+            if (result) {
+              streamRef.current = result.stream
+              await startNativeScanning(result)
+              await setTorch(true)
+              return
+            }
+          } catch {
+            if (cancelled) return
+            stopStream()
+          }
+        }
+        await tryStartHtml5Qrcode()
+      } catch (err) {
+        if (!cancelled) {
+          stopStream()
           setError(formatErrorText(t, err))
         }
-      } catch (err) {
-        if (!cancelled) setError(formatErrorText(t, err))
-      } finally {
-        startingRef.current = false
       }
-    }, 300)
+    }
+
+    stopStream()
+    void start()
 
     return () => {
       cancelled = true
-      clearTimeout(timer)
-      if (instanceRef.current) {
-        void stopScannerInstance(instanceRef.current)
-        instanceRef.current = null
-      }
+      stopStream()
     }
   }, [open, onClose, onScan, t, attempt])
 
@@ -171,7 +234,7 @@ export function BarcodeScanner({ open, onClose, onScan, title }: BarcodeScannerP
           <div className="flex items-center gap-2">
             {torchSupported && (
               <button
-                onClick={toggleTorch}
+                onClick={() => setTorch(!torchOn)}
                 title={t('pos.torch')}
                 className={`rounded-lg p-1.5 ${
                   torchOn
@@ -190,8 +253,21 @@ export function BarcodeScanner({ open, onClose, onScan, title }: BarcodeScannerP
         <div
           id="barcode-scanner-reader"
           ref={scannerRef}
-          className="min-h-[200px] rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800"
-        />
+          className="relative min-h-[200px] rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800"
+        >
+          <canvas ref={canvasRef} className="hidden" />
+          {!error && (
+            <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+              <div className="relative h-24 w-56 max-w-[80%]">
+                <span className="absolute -left-0 -top-0 h-6 w-6 rounded-tl-md border-l-2 border-t-2 border-emerald-400" />
+                <span className="absolute -right-0 -top-0 h-6 w-6 rounded-tr-md border-r-2 border-t-2 border-emerald-400" />
+                <span className="absolute -bottom-0 -left-0 h-6 w-6 rounded-bl-md border-b-2 border-l-2 border-emerald-400" />
+                <span className="absolute -right-0 -bottom-0 h-6 w-6 rounded-br-md border-b-2 border-r-2 border-emerald-400" />
+                <div className="absolute inset-x-2 top-1/2 h-px bg-emerald-400/60" />
+              </div>
+            </div>
+          )}
+        </div>
         {error ? (
           <div className="mt-3 space-y-2">
             <p className="text-center text-xs text-red-500">{error}</p>
