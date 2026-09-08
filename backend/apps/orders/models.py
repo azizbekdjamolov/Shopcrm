@@ -45,6 +45,7 @@ class Order(AbstractBusinessModel):
     delivery_address = models.TextField(blank=True, default='')
     delivery_phone = models.CharField(max_length=20, blank=True, default='')
     delivery_notes = models.TextField(blank=True, default='')
+    notes = models.TextField(blank=True, default='')
     payment_method = models.CharField(
         max_length=20, choices=PaymentMethod.choices, default=PaymentMethod.CASH
     )
