@@ -66,21 +66,27 @@ export function BarcodeScanner({ open, onClose, onScan, title }: BarcodeScannerP
   const [error, setError] = useState('')
   const [attempt, setAttempt] = useState(0)
   const [torchOn, setTorchOn] = useState(false)
-  const [torchSupported, setTorchSupported] = useState(false)
   const torchOnRef = useRef(false)
 
-  const setTorch = async (next: boolean) => {
+  const setTorch = async (next: boolean): Promise<boolean> => {
     const track = streamRef.current?.getVideoTracks()?.[0]
-    if (!track) return
-    try {
-      const constraints: any = { advanced: [{ torch: next }] }
-      await track.applyConstraints(constraints as MediaTrackConstraints)
+    if (!track) return false
+    const tryConstraints = async (c: MediaTrackConstraints): Promise<boolean> => {
+      try {
+        await track.applyConstraints(c)
+        return true
+      } catch {
+        return false
+      }
+    }
+    const ok =
+      (await tryConstraints({ advanced: [{ torch: next }] } as any)) ||
+      (await tryConstraints({ torch: next } as any))
+    if (ok) {
       torchOnRef.current = next
       setTorchOn(next)
-      setTorchSupported(true)
-    } catch {
-      /* torch unsupported on this device */
     }
+    return ok
   }
 
   const stopStream = () => {
@@ -232,19 +238,17 @@ export function BarcodeScanner({ open, onClose, onScan, title }: BarcodeScannerP
         <div className="mb-4 flex items-center justify-between">
           <h3 className="font-bold text-gray-900 dark:text-white">{title || t('pos.scanBarcode')}</h3>
           <div className="flex items-center gap-2">
-            {torchSupported && (
-              <button
-                onClick={() => setTorch(!torchOn)}
-                title={t('pos.torch')}
-                className={`rounded-lg p-1.5 ${
-                  torchOn
-                    ? 'bg-yellow-100 text-yellow-600 dark:bg-yellow-900/30 dark:text-yellow-400'
-                    : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800'
-                }`}
-              >
-                <Flashlight className="h-5 w-5" />
-              </button>
-            )}
+            <button
+              onClick={() => setTorch(!torchOn)}
+              title={t('pos.torch')}
+              className={`rounded-lg p-1.5 ${
+                torchOn
+                  ? 'bg-yellow-100 text-yellow-600 dark:bg-yellow-900/30 dark:text-yellow-400'
+                  : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800'
+              }`}
+            >
+              <Flashlight className="h-5 w-5" />
+            </button>
             <button onClick={onClose} className="rounded-lg p-1 hover:bg-gray-100 dark:hover:bg-gray-800">
               <X className="h-5 w-5" />
             </button>
