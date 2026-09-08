@@ -22,6 +22,7 @@ export interface SaleItemData {
 export interface CreateSaleData {
   branch_id: string
   customer_id?: string
+  user_id?: string
   items: SaleItemData[]
   discount_amount?: number
   discount?: number

@@ -42,6 +42,23 @@ class SaleViewSet(viewsets.ModelViewSet):
         customer = None
         if data.get('customer_id'):
             customer = get_object_or_404(Customer, id=data['customer_id'], business=business)
+        elif data.get('user_id'):
+            from django.conf import settings
+            account = get_object_or_404(
+                settings.AUTH_USER_MODEL, id=data['user_id']
+            )
+            customer, _ = Customer.objects.get_or_create(
+                business=business,
+                user=account,
+                defaults={
+                    'name': account.get_full_name() or account.email,
+                    'email': account.email,
+                    'phone': account.phone or '',
+                },
+            )
+            customer.name = account.get_full_name() or account.email
+            customer.email = account.email
+            customer.save(update_fields=['name', 'email', 'updated_at'])
         branch = None
         if data.get('branch_id'):
             branch = get_object_or_404(Branch, id=data['branch_id'], business=business)

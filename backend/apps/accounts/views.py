@@ -18,6 +18,25 @@ from apps.core.exceptions import success_response
 User = get_user_model()
 
 
+class RegisteredUsersView(generics.GenericAPIView):
+    """Lists all active registered (non-admin) accounts so sellers can assign
+    debt sales / pick a customer by email."""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        users = User.objects.filter(is_active=True, is_platform_admin=False).order_by('email')
+        data = [
+            {
+                'id': str(u.id),
+                'email': u.email,
+                'full_name': u.get_full_name() or u.email,
+                'phone': u.phone or '',
+            }
+            for u in users
+        ]
+        return success_response(data=data)
+
+
 class RegisterView(generics.CreateAPIView):
     serializer_class = RegisterSerializer
     permission_classes = [permissions.AllowAny]

@@ -66,6 +66,7 @@ class SaleSerializer(serializers.ModelSerializer):
 
 class CreateSaleSerializer(serializers.Serializer):
     customer_id = OptionalUUIDField(required=False, allow_null=True)
+    user_id = OptionalUUIDField(required=False, allow_null=True)
     branch_id = OptionalUUIDField(required=False, allow_null=True)
     items = CreateSaleItemSerializer(many=True, write_only=True)
     discount = serializers.DecimalField(max_digits=12, decimal_places=2, default=0)

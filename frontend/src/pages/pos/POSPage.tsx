@@ -59,6 +59,7 @@ export function POSPage() {
   const [discount, setDiscount] = useState(0)
   const [paymentMethod, setPaymentMethod] = useState<string>(PaymentMethod.CASH)
   const [customerId, setCustomerId] = useState<string | undefined>()
+  const [debtCustomerId, setDebtCustomerId] = useState<string | undefined>()
   const [showPayment, setShowPayment] = useState(false)
   const [showScanner, setShowScanner] = useState(false)
   const [cashReceived, setCashReceived] = useState<number>(0)
@@ -84,6 +85,12 @@ export function POSPage() {
     queryFn: () => customersApi.getCustomers({ page: 1, page_size: 200 }),
   })
 
+  const { data: registeredUsers } = useQuery({
+    queryKey: ['users', 'registered'],
+    queryFn: customersApi.getRegisteredUsers,
+    staleTime: 60_000,
+  })
+
   const saleMutation = useMutation({
     mutationFn: (data: CreateSaleData) => salesApi.createSale(data),
     onSuccess: (sale) => {
@@ -93,9 +100,11 @@ export function POSPage() {
         unit_price: item.price,
         total: item.price * item.quantity - item.discount,
       }))
-      const customerName = customerId
-        ? customers?.items?.find((c: any) => c.id === customerId)?.full_name
-        : undefined
+      const customerName = paymentMethod === 'debt'
+        ? registeredUsers?.find((u) => u.id === debtCustomerId)?.full_name
+        : customerId
+          ? customers?.items?.find((c: any) => c.id === customerId)?.full_name
+          : undefined
       setCompletedSale({
         id: sale.id,
         sale_number: (sale as any).sale_number,
@@ -108,6 +117,7 @@ export function POSPage() {
       setCart([])
       setDiscount(0)
       setCustomerId(undefined)
+      setDebtCustomerId(undefined)
       setCashReceived(0)
       setNotes('')
       setShowPayment(false)
@@ -120,7 +130,8 @@ export function POSPage() {
 
   useEffect(() => {
     if (products?.items) {
-      const cats = [...new Set(products.items.map((p: any) => p.category_name).filter(Boolean))] as string[]
+      const inStock = products.items.filter((p: any) => (Number(p.quantity ?? p.stock_quantity ?? 0)) > 0)
+      const cats = [...new Set(inStock.map((p: any) => p.category_name).filter(Boolean))] as string[]
       setCategories(cats)
     }
   }, [products])
@@ -155,9 +166,14 @@ export function POSPage() {
 
   const addToCart = useCallback((product: any) => {
     setCart((prev) => {
+      const stock = Number(product.quantity ?? product.stock_quantity ?? 0)
+      if (stock <= 0) {
+        toast.error(t('pos.insufficientStock'))
+        return prev
+      }
       const existing = prev.find((item) => item.product_id === product.id)
       if (existing) {
-        if (existing.quantity >= (product.quantity || product.stock_quantity || 0)) {
+        if (existing.quantity >= stock) {
           toast.error(t('pos.insufficientStock'))
           return prev
         }
@@ -236,13 +252,14 @@ export function POSPage() {
       toast.error(t('pos.cashInsufficient'))
       return
     }
-    if (paymentMethod === 'debt' && !customerId) {
+    if (paymentMethod === 'debt' && !debtCustomerId) {
       toast.error(t('pos.selectCustomerForDebt'))
       return
     }
     saleMutation.mutate({
       branch_id: 'default',
-      customer_id: customerId,
+      customer_id: paymentMethod === 'debt' ? undefined : customerId,
+      user_id: paymentMethod === 'debt' ? debtCustomerId : undefined,
       items: cart.map((item) => ({
         product_id: item.product_id,
         quantity: item.quantity,
@@ -302,7 +319,7 @@ export function POSPage() {
         )}
 
         <div className="flex-1 overflow-y-auto p-4">
-          {!products?.items?.length ? (
+          {!(products?.items ?? []).some((p: any) => (Number(p.quantity ?? p.stock_quantity ?? 0)) > 0) ? (
             <div className="flex flex-col items-center justify-center py-16 text-gray-400">
               <Package className="h-12 w-12 mb-3 opacity-50" />
               <p className="text-sm font-medium">{t('pos.noProducts')}</p>
@@ -310,7 +327,9 @@ export function POSPage() {
             </div>
           ) : (
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-              {products.items.map((product: any) => {
+              {(products?.items ?? [])
+                .filter((p: any) => (Number(p.quantity ?? p.stock_quantity ?? 0)) > 0)
+                .map((product: any) => {
                 const inCart = cart.find((i) => i.product_id === product.id)
                 const outOfStock = (product.quantity || product.stock_quantity || 0) === 0
                 return (
@@ -422,16 +441,31 @@ export function POSPage() {
           <div className="border-t border-gray-200 p-4 space-y-3 dark:border-gray-700">
             <div className="flex items-center gap-2">
               <User className="h-4 w-4 flex-shrink-0 text-gray-400" />
-              <select
-                value={customerId || ''}
-                onChange={(e) => setCustomerId(e.target.value || undefined)}
-                className="flex-1 rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
-              >
-                <option value="">{t('pos.walkInCustomer')}</option>
-                {customers?.items?.map((c: any) => (
-                  <option key={c.id} value={c.id}>{c.full_name}</option>
-                ))}
-              </select>
+              {paymentMethod === 'debt' ? (
+                <select
+                  value={debtCustomerId || ''}
+                  onChange={(e) => setDebtCustomerId(e.target.value || undefined)}
+                  className="flex-1 rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+                >
+                  <option value="">{t('pos.selectCustomerForDebt')}</option>
+                  {(registeredUsers || []).map((u) => (
+                    <option key={u.id} value={u.id}>
+                      {u.full_name || u.email}{u.email && (u.full_name && u.full_name !== u.email ? ` — ${u.email}` : '')}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <select
+                  value={customerId || ''}
+                  onChange={(e) => setCustomerId(e.target.value || undefined)}
+                  className="flex-1 rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+                >
+                  <option value="">{t('pos.walkInCustomer')}</option>
+                  {customers?.items?.map((c: any) => (
+                    <option key={c.id} value={c.id}>{c.full_name}</option>
+                  ))}
+                </select>
+              )}
             </div>
 
             <div className="flex gap-2">

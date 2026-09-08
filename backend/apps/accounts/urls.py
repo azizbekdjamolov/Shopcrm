@@ -9,6 +9,7 @@ urlpatterns = [
     path('refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('logout/', views.LogoutView.as_view(), name='logout'),
     path('me/', views.MeView.as_view(), name='me'),
+    path('registered-users/', views.RegisteredUsersView.as_view(), name='registered-users'),
     path('change-password/', views.ChangePasswordView.as_view(), name='change-password'),
     path('forgot-password/', views.ForgotPasswordView.as_view(), name='forgot-password'),
     path('telegram/connect/', views.TelegramConnectView.as_view(), name='telegram-connect'),

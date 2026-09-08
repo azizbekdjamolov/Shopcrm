@@ -17,10 +17,22 @@ export interface CustomerCreateData {
   notes?: string
 }
 
+export interface RegisteredUser {
+  id: string
+  email: string
+  full_name: string
+  phone: string
+}
+
 export const customersApi = {
   getCustomers: async (params?: CustomerFilters): Promise<PaginatedResponse<Customer>> => {
     const response = await api.get<PaginatedResponse<Customer>>('/customers', { params })
     return response.data
+  },
+
+  getRegisteredUsers: async (): Promise<RegisteredUser[]> => {
+    const response = await api.get<{ data?: RegisteredUser[] }>('/auth/registered-users/')
+    return response.data?.data || (response.data as any)?.items || []
   },
 
   getCustomer: async (id: string): Promise<Customer> => {
