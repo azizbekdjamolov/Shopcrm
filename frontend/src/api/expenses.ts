@@ -42,7 +42,9 @@ export const expensesApi = {
 
   getCategories: async (): Promise<ExpenseCategory[]> => {
     const response = await api.get<ExpenseCategory[]>('/expense-categories')
-    return response.data
+    const data: any = response.data
+    if (Array.isArray(data)) return data
+    return data?.items || data?.results || []
   },
 
   createCategory: async (data: {
