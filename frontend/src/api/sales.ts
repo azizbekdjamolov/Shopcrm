@@ -24,6 +24,7 @@ export interface CreateSaleData {
   customer_id?: string
   items: SaleItemData[]
   discount_amount?: number
+  discount?: number
   payment_method: PaymentMethodType
   notes?: string
 }

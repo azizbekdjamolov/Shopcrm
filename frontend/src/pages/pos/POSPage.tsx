@@ -249,7 +249,7 @@ export function POSPage() {
         unit_price: item.price,
         discount: item.discount,
       })),
-      discount_amount: discount,
+      discount: discount,
       payment_method: paymentMethod as any,
       notes: notes || undefined,
     })

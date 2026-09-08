@@ -373,6 +373,7 @@
     "receipt": "Receipt",
     "date": "Date",
     "categories": "Categories",
+    "categoryTitle": "Expense Categories",
     "addCategory": "Add Category",
     "editCategory": "Edit Category",
     "deleteCategory": "Delete Category",

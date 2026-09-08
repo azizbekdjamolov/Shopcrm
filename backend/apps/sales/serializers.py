@@ -2,6 +2,16 @@ from rest_framework import serializers
 from .models import Sale, SaleItem
 
 
+class OptionalUUIDField(serializers.UUIDField):
+    def to_internal_value(self, data):
+        if data in ('', 'default', None):
+            return None
+        try:
+            return super().to_internal_value(data)
+        except serializers.ValidationError:
+            return None
+
+
 class SaleItemSerializer(serializers.ModelSerializer):
     product_name = serializers.CharField(source='product.name', read_only=True)
 
@@ -41,8 +51,8 @@ class SaleSerializer(serializers.ModelSerializer):
 
 
 class CreateSaleSerializer(serializers.Serializer):
-    customer_id = serializers.UUIDField(required=False, allow_null=True)
-    branch_id = serializers.UUIDField(required=False, allow_null=True)
+    customer_id = OptionalUUIDField(required=False, allow_null=True)
+    branch_id = OptionalUUIDField(required=False, allow_null=True)
     items = SaleItemSerializer(many=True, write_only=True)
     discount = serializers.DecimalField(max_digits=12, decimal_places=2, default=0)
     tax = serializers.DecimalField(max_digits=12, decimal_places=2, default=0)
