@@ -128,7 +128,13 @@ export function POSPage() {
       queryClient.invalidateQueries({ queryKey: ['users', 'registered'] })
     },
     onError: (err: any) => {
-      const msg = err?.response?.data?.detail || err?.message || t('pos.saleFailed')
+      const data = err?.response?.data
+      let msg = data?.message || data?.detail || err?.message || t('pos.saleFailed')
+      if (data?.details && typeof data?.details === 'object') {
+        const first = Object.values(data.details)[0]
+        if (Array.isArray(first)) msg = String(first[0])
+        else if (first) msg = String(first)
+      }
       toast.error(msg)
     },
   })
