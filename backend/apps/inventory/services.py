@@ -17,6 +17,9 @@ class InventoryService:
                 'minimum_stock': product.minimum_stock,
             }
         )
+        if not created and inventory.quantity < product.quantity:
+            inventory.quantity = product.quantity
+            inventory.save(update_fields=['quantity', 'updated_at'])
         return inventory
 
     @staticmethod
