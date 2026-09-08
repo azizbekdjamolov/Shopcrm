@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from .models import Sale, SaleItem
+from apps.products.models import Product
 
 
 class OptionalUUIDField(serializers.UUIDField):
@@ -10,6 +11,19 @@ class OptionalUUIDField(serializers.UUIDField):
             return super().to_internal_value(data)
         except serializers.ValidationError:
             return None
+
+
+class CreateSaleItemSerializer(serializers.Serializer):
+    product_id = serializers.PrimaryKeyRelatedField(
+        source='product', queryset=Product.objects.all()
+    )
+    quantity = serializers.IntegerField(min_value=1)
+    unit_price = serializers.DecimalField(
+        max_digits=12, decimal_places=2, required=False
+    )
+    discount = serializers.DecimalField(
+        max_digits=12, decimal_places=2, default=0
+    )
 
 
 class SaleItemSerializer(serializers.ModelSerializer):
@@ -53,7 +67,7 @@ class SaleSerializer(serializers.ModelSerializer):
 class CreateSaleSerializer(serializers.Serializer):
     customer_id = OptionalUUIDField(required=False, allow_null=True)
     branch_id = OptionalUUIDField(required=False, allow_null=True)
-    items = SaleItemSerializer(many=True, write_only=True)
+    items = CreateSaleItemSerializer(many=True, write_only=True)
     discount = serializers.DecimalField(max_digits=12, decimal_places=2, default=0)
     tax = serializers.DecimalField(max_digits=12, decimal_places=2, default=0)
     payment_method = serializers.ChoiceField(choices=Sale.PaymentMethod.choices, default='cash')
