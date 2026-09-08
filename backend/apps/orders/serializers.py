@@ -29,7 +29,7 @@ class OrderSerializer(serializers.ModelSerializer):
     items = OrderItemSerializer(many=True, read_only=True)
     customer_name = serializers.CharField(source='customer.name', read_only=True, default='')
     branch_name = serializers.CharField(source='branch.name', read_only=True, default='')
-    is_cancellable = serializers.BooleanField(source='is_cancellable', read_only=True)
+    is_cancellable = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = Order
