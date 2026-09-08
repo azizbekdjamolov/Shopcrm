@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useQuery, useMutation } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   Search, ShoppingCart, Plus, Minus, Trash2, X, User, CreditCard,
   Banknote, Smartphone, AlertTriangle, CheckCircle2, Barcode, Receipt,
@@ -91,6 +91,8 @@ export function POSPage() {
     staleTime: 60_000,
   })
 
+  const queryClient = useQueryClient()
+
   const saleMutation = useMutation({
     mutationFn: (data: CreateSaleData) => salesApi.createSale(data),
     onSuccess: (sale) => {
@@ -121,6 +123,9 @@ export function POSPage() {
       setCashReceived(0)
       setNotes('')
       setShowPayment(false)
+      queryClient.invalidateQueries({ queryKey: ['products', 'pos'] })
+      queryClient.invalidateQueries({ queryKey: ['customers', 'list'] })
+      queryClient.invalidateQueries({ queryKey: ['users', 'registered'] })
     },
     onError: (err: any) => {
       const msg = err?.response?.data?.detail || err?.message || t('pos.saleFailed')

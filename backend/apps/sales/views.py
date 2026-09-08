@@ -43,10 +43,8 @@ class SaleViewSet(viewsets.ModelViewSet):
         if data.get('customer_id'):
             customer = get_object_or_404(Customer, id=data['customer_id'], business=business)
         elif data.get('user_id'):
-            from django.conf import settings
-            account = get_object_or_404(
-                settings.AUTH_USER_MODEL, id=data['user_id']
-            )
+            from django.contrib.auth import get_user_model
+            account = get_object_or_404(get_user_model(), id=data['user_id'])
             customer, _ = Customer.objects.get_or_create(
                 business=business,
                 user=account,
