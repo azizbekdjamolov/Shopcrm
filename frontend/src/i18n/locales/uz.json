@@ -125,7 +125,18 @@
     "loggedOut": "Tizimdan chiqildi",
     "welcomeBack": "Qaytganingiz bilan",
     "enterEmail": "Email manzilingizni kiriting",
-    "enterPassword": "Parolingizni kiriting"
+    "enterPassword": "Parolingizni kiriting",
+    "sendCode": "Emailga kod yuborish",
+    "sending": "Yuborilmoqda...",
+    "verifyCode": "Kodni tasdiqlash",
+    "verifying": "Tekshirilmoqda...",
+    "resendCode": "Qayta yuborish",
+    "verificationCode": "Tasdiqlash kodi",
+    "codeSent": "Emailga tasdiqlash kodi yuborildi",
+    "codeSentHint": "Emailga yuborilgan 6 xonali kodni kiriting",
+    "codeVerified": "Kod tasdiqlandi",
+    "sendCodeFirst": "Avval emailga kod yuboring",
+    "verifyCodeFirst": "Avval kodni tasdiqlang"
   },
   "dashboard": {
     "title": "Boshqaruv paneli",
@@ -677,6 +688,7 @@
     "pageNotFoundDesc": "Siz qidirgan sahifa mavjud emas yoki o'chirilgan",
     "goHome": "Bosh sahifaga o'tish",
     "sessionExpired": "Sessiya muddati tugadi",
+    "invalidCode": "Kod noto'g'ri yoki muddati o'tgan",
     "pleaseLogin": "Iltimos, qaytadan kiring",
     "send": "Yuborish"
   },
@@ -835,6 +847,8 @@
     "orderShipped": "Buyurtma yuborildi",
     "orderDelivered": "Buyurtma yetkazildi",
     "orderCancelled": "Buyurtma bekor qilindi",
+    "addressRequired": "Manzilni kiriting",
+    "phoneRequired": "Telefon raqamingizni kiriting",
     "viewDetails": "Batafsil ko'rish",
     "relatedProducts": "Tegishli mahsulotlar",
     "inStock": "Mavjud",

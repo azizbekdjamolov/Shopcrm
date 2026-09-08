@@ -9,6 +9,7 @@ import { useAuthStore } from '@/stores/authStore'
 import { PageHeader } from '@/components/common/PageHeader'
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { MapAddressPicker } from './MapAddressPicker'
 import { formatCurrency } from '@/lib/utils'
 import toast from 'react-hot-toast'
@@ -19,6 +20,7 @@ export function CheckoutPage() {
   const { items, getTotal, clearCart } = useCartStore()
   const user = useAuthStore((s) => s.user)
   const [address, setAddress] = useState(user?.address || '')
+  const [phone, setPhone] = useState(user?.phone || '')
   const [paymentMethod, setPaymentMethod] = useState('cash')
 
   const businessId = [...new Set(items.map((item) => item.business_id).filter(Boolean))][0] || undefined
@@ -59,6 +61,10 @@ export function CheckoutPage() {
       toast.error(t('shop.addressRequired', 'Manzilni kiriting'))
       return
     }
+    if (!phone.trim()) {
+      toast.error(t('shop.phoneRequired', 'Telefon raqamingizni kiriting'))
+      return
+    }
     orderMutation.mutate({
       items: items.map((item) => ({
         product_id: item.product_id,
@@ -68,6 +74,7 @@ export function CheckoutPage() {
       branch_id: '',
       business_id: businessId,
       delivery_address: address,
+      delivery_phone: phone.trim(),
       payment_method: paymentMethod,
     })
   }
@@ -109,6 +116,13 @@ export function CheckoutPage() {
                 value={address}
                 onChange={setAddress}
                 placeholder={t('shop.address')}
+              />
+              <Input
+                label={t('shop.phone')}
+                type="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="+998 90 123 45 67"
               />
             </CardContent>
           </Card>

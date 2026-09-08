@@ -125,7 +125,18 @@
     "loggedOut": "Вы вышли из системы",
     "welcomeBack": "С возвращением",
     "enterEmail": "Введите ваш email",
-    "enterPassword": "Введите ваш пароль"
+    "enterPassword": "Введите ваш пароль",
+    "sendCode": "Отправить код на email",
+    "sending": "Отправка...",
+    "verifyCode": "Подтвердить код",
+    "verifying": "Проверка...",
+    "resendCode": "Отправить снова",
+    "verificationCode": "Код подтверждения",
+    "codeSent": "Код подтверждения отправлен на email",
+    "codeSentHint": "Введите 6-значный код, отправленный на email",
+    "codeVerified": "Код подтверждён",
+    "sendCodeFirst": "Сначала отправьте код на email",
+    "verifyCodeFirst": "Сначала подтвердите код"
   },
   "dashboard": {
     "title": "Панель управления",
@@ -677,6 +688,7 @@
     "pageNotFoundDesc": "Запрашиваемая страница не существует или удалена",
     "goHome": "На главную",
     "sessionExpired": "Сессия истекла",
+    "invalidCode": "Неверный или просроченный код",
     "pleaseLogin": "Пожалуйста, войдите снова",
     "send": "Отправить"
   },
@@ -835,6 +847,8 @@
     "orderShipped": "Заказ отправлен",
     "orderDelivered": "Заказ доставлен",
     "orderCancelled": "Заказ отменён",
+    "addressRequired": "Введите адрес",
+    "phoneRequired": "Введите ваш номер телефона",
     "viewDetails": "Подробнее",
     "relatedProducts": "Похожие товары",
     "inStock": "В наличии",

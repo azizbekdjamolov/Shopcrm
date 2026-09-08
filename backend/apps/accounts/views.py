@@ -3,6 +3,8 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenRefreshView
 from rest_framework_simplejwt.tokens import OutstandingToken, BlacklistedToken
+from django.conf import settings
+from django.core import mail
 from django.contrib.auth import get_user_model
 
 from .serializers import (
@@ -12,10 +14,71 @@ from .serializers import (
     ChangePasswordSerializer,
     ForgotPasswordSerializer,
     ProfileUpdateSerializer,
+    SendVerificationCodeSerializer,
+    VerifyVerificationCodeSerializer,
 )
+from .models import EmailVerification
 from apps.core.exceptions import success_response
 
 User = get_user_model()
+
+
+def _send_verification_email(email: str, code: str) -> None:
+    subject = 'Business OS - Verification code'
+    body = f'Your verification code is: {code}\nIt expires in 10 minutes.'
+    html = (
+        '<div style="font-family:Arial,sans-serif;padding:24px;max-width:480px;margin:0 auto;border:1px solid #e5e7eb;border-radius:12px">'
+        '<h2 style="margin:0 0 8px;color:#111827">Business OS</h2>'
+        f'<p style="color:#374151;font-size:15px">Emailni tasdiqlash uchun quyidagi kodni kiriting:</p>'
+        f'<div style="font-size:28px;font-weight:bold;letter-spacing:6px;color:#4f46e5;margin:12px 0">{code}</div>'
+        f'<p style="color:#6b7280;font-size:13px">Kod 10 daqiqa amal qiladi. Email: {email}</p>'
+        '</div>'
+    )
+    mail.send_mail(
+        subject,
+        body,
+        settings.DEFAULT_FROM_EMAIL,
+        [email],
+        html_message=html,
+        fail_silently=False,
+    )
+
+
+class SendVerificationCodeView(generics.GenericAPIView):
+    serializer_class = SendVerificationCodeSerializer
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        email = serializer.validated_data['email']
+        record = EmailVerification.generate(email, purpose=EmailVerification.PURPOSE_REGISTER)
+        try:
+            _send_verification_email(record.email, record.code)
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).exception('Failed to send verification email to %s', email)
+            return success_response(message='Failed to send email. Try again later.', status_code=status.HTTP_400_BAD_REQUEST)
+        data = {'email': record.email}
+        if settings.DEBUG:
+            data['debug_code'] = record.code
+        return success_response(data=data, message='Verification code sent')
+
+
+class VerifyVerificationCodeView(generics.GenericAPIView):
+    serializer_class = VerifyVerificationCodeSerializer
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+        valid = EmailVerification.verify(
+            data['email'], data['code'], purpose=EmailVerification.PURPOSE_REGISTER, consume=False
+        )
+        if not valid:
+            return success_response(message='Invalid or expired code.', status_code=status.HTTP_400_BAD_REQUEST)
+        return success_response(data={'email': data['email'], 'verified': True}, message='Code verified')
 
 
 class RegisteredUsersView(generics.GenericAPIView):

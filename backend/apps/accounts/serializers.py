@@ -8,23 +8,28 @@ User = get_user_model()
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, min_length=8)
     password_confirm = serializers.CharField(write_only=True)
+    verification_code = serializers.CharField(write_only=True)
 
     class Meta:
         model = User
-        fields = ('email', 'first_name', 'last_name', 'phone', 'business_name', 'password', 'password_confirm')
+        fields = ('email', 'first_name', 'last_name', 'business_name', 'password', 'password_confirm', 'verification_code')
 
     def validate(self, attrs):
         if attrs['password'] != attrs['password_confirm']:
             raise serializers.ValidationError({'password_confirm': 'Passwords do not match.'})
+        from .models import EmailVerification
+        if not EmailVerification.verify(attrs['email'], attrs['verification_code'], purpose=EmailVerification.PURPOSE_REGISTER):
+            raise serializers.ValidationError({'verification_code': 'Invalid or expired verification code.'})
         return attrs
 
     def validate_email(self, value):
-        if User.objects.filter(email=value).exists():
+        if User.objects.filter(email__iexact=value).exists():
             raise serializers.ValidationError('A user with this email already exists.')
-        return value
+        return value.lower()
 
     def create(self, validated_data):
         validated_data.pop('password_confirm')
+        validated_data.pop('verification_code')
         password = validated_data.pop('password')
         business_name = validated_data.pop('business_name', '')
         user = User.objects.create_user(**validated_data)
@@ -69,6 +74,20 @@ class LoginSerializer(serializers.Serializer):
             raise serializers.ValidationError('This account is inactive.')
         attrs['user'] = user
         return attrs
+
+
+class SendVerificationCodeSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+
+    def validate_email(self, value):
+        if User.objects.filter(email__iexact=value).exists():
+            raise serializers.ValidationError('A user with this email already exists.')
+        return value.lower()
+
+
+class VerifyVerificationCodeSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    code = serializers.CharField(max_length=6)
 
 
 class UserSerializer(serializers.ModelSerializer):

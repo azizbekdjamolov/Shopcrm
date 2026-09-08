@@ -57,6 +57,16 @@ export const authApi = {
     }
   },
 
+  sendVerificationCode: async (email: string): Promise<{ email: string; debug_code?: string }> => {
+    const response = await api.post<{ email: string; debug_code?: string }>('/auth/send-verification-code/', { email })
+    return response.data
+  },
+
+  verifyVerificationCode: async (email: string, code: string): Promise<boolean> => {
+    const response = await api.post<{ verified: boolean }>('/auth/verify-verification-code/', { email, code })
+    return response.data?.verified === true
+  },
+
   refreshToken: async (refreshToken: string): Promise<{ access: string; refresh?: string }> => {
     const response = await api.post<{ access: string; refresh?: string }>('/auth/refresh/', {
       refresh: refreshToken,

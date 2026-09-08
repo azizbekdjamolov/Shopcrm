@@ -126,7 +126,18 @@
     "loggedOut": "You have been signed out",
     "welcomeBack": "Welcome back",
     "enterEmail": "Enter your email",
-    "enterPassword": "Enter your password"
+    "enterPassword": "Enter your password",
+    "sendCode": "Send code to email",
+    "sending": "Sending...",
+    "verifyCode": "Verify code",
+    "verifying": "Verifying...",
+    "resendCode": "Resend",
+    "verificationCode": "Verification code",
+    "codeSent": "Verification code sent to your email",
+    "codeSentHint": "Enter the 6-digit code sent to your email",
+    "codeVerified": "Code verified",
+    "sendCodeFirst": "Send a code to your email first",
+    "verifyCodeFirst": "Verify the code first"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -673,6 +684,7 @@
     "notFoundDesc": "The page you're looking for doesn't exist or has been removed",
     "goHome": "Go to homepage",
     "sessionExpired": "Session expired",
+    "invalidCode": "Invalid or expired code",
     "pleaseLogin": "Please sign in again"
   },
   "roles": {
@@ -831,6 +843,8 @@
     "orderShipped": "Order Shipped",
     "orderDelivered": "Order Delivered",
     "orderCancelled": "Order Cancelled",
+    "addressRequired": "Enter your address",
+    "phoneRequired": "Enter your phone number",
     "statusNew": "New Order",
     "statusConfirmed": "Confirmed",
     "statusPreparing": "Preparing",

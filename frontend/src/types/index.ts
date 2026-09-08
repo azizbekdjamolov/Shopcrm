@@ -571,10 +571,10 @@ export interface RegisterRequest {
   first_name: string
   last_name: string
   email: string
-  phone: string
   password: string
   password_confirm: string
   business_name: string
+  verification_code: string
 }
 
 export interface AuthTokens {

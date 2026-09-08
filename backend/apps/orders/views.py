@@ -85,6 +85,14 @@ class OrderViewSet(viewsets.ModelViewSet):
                 'quantity': item['quantity'],
                 'unit_price': item.get('unit_price', product.selling_price),
             })
+        delivery_phone = data.get('delivery_phone', '')
+        if delivery_phone:
+            if customer and not customer.phone:
+                customer.phone = delivery_phone
+                customer.save(update_fields=['phone'])
+            if request.user.is_authenticated and not request.user.phone:
+                request.user.phone = delivery_phone
+                request.user.save(update_fields=['phone'])
         try:
             order = OrderService.create_order(
                 business=business,
@@ -92,7 +100,7 @@ class OrderViewSet(viewsets.ModelViewSet):
                 customer=customer,
                 branch=branch,
                 delivery_address=data.get('delivery_address', ''),
-                delivery_phone=data.get('delivery_phone', ''),
+                delivery_phone=delivery_phone,
                 delivery_notes=data.get('delivery_notes', ''),
                 delivery_fee=data.get('delivery_fee', 0),
                 discount=data.get('discount', 0),

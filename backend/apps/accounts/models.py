@@ -1,6 +1,10 @@
+import secrets
 import uuid
+from datetime import timedelta
+
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.db import models
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 
@@ -77,3 +81,50 @@ class User(AbstractUser):
     @property
     def is_business_admin(self):
         return self.role in [self.Role.OWNER, self.Role.ADMIN]
+
+
+class EmailVerification(models.Model):
+    PURPOSE_REGISTER = 'register'
+    PURPOSE_RESET = 'reset'
+
+    email = models.EmailField(db_index=True)
+    code = models.CharField(max_length=6, db_index=True)
+    purpose = models.CharField(max_length=20, default=PURPOSE_REGISTER)
+    expires_at = models.DateTimeField()
+    is_used = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['email', 'purpose', 'is_used']),
+        ]
+
+    @property
+    def is_expired(self):
+        return timezone.now() > self.expires_at
+
+    @classmethod
+    def generate(cls, email, purpose=PURPOSE_REGISTER, ttl_minutes=10):
+        cls.objects.filter(email=email, purpose=purpose, is_used=False).update(is_used=True)
+        code = f'{secrets.randbelow(1000000):06d}'
+        return cls.objects.create(
+            email=email,
+            code=code,
+            purpose=purpose,
+            expires_at=timezone.now() + timedelta(minutes=ttl_minutes),
+        )
+
+    @classmethod
+    def verify(cls, email, code, purpose=PURPOSE_REGISTER, consume=True):
+        record = (
+            cls.objects.filter(email=email, code=code, purpose=purpose, is_used=False)
+            .order_by('-created_at')
+            .first()
+        )
+        if not record or record.is_expired:
+            return None
+        if consume:
+            record.is_used = True
+            record.save(update_fields=['is_used'])
+        return record
