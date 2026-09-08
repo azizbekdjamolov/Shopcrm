@@ -43,6 +43,7 @@ function toFrontendOrder(raw: any): Order {
     discount_amount: raw.discount_amount ?? raw.discount ?? 0,
     tax_amount: raw.tax_amount ?? 0,
     delivery_fee: raw.delivery_fee ?? 0,
+    is_cancellable: !!raw.is_cancellable,
   }
 }
 
@@ -77,13 +78,25 @@ export const ordersApi = {
     return toFrontendOrder(response.data)
   },
 
-  updateOrderStatus: async (id: string, status: OrderStatusType): Promise<Order> => {
-    const response = await api.patch<Order>(`/orders/${id}/status`, { status })
-    return response.data
+  updateOrderStatus: async (id: string, status: string): Promise<Order> => {
+    const response = await api.post<Order>(`/orders/${id}/status/`, { status })
+    return toFrontendOrder(response.data)
   },
 
   cancelOrder: async (id: string, reason?: string): Promise<Order> => {
-    const response = await api.post<Order>(`/orders/${id}/cancel`, { reason })
-    return response.data
+    const response = await api.post<Order>(`/orders/${id}/cancel/`, { reason })
+    return toFrontendOrder(response.data)
   },
+}
+
+export const ORDER_STATUS_TRANSITIONS: Record<string, string[]> = {
+  NEW: ['CONFIRMED', 'CANCELLED'],
+  CONFIRMED: ['PREPARING', 'CANCELLED'],
+  PREPARING: ['READY_FOR_DELIVERY', 'CANCELLED'],
+  READY_FOR_DELIVERY: ['COURIER_ASSIGNED', 'CANCELLED'],
+  COURIER_ASSIGNED: ['ON_THE_WAY', 'CANCELLED'],
+  ON_THE_WAY: ['ARRIVED'],
+  ARRIVED: ['DELIVERED'],
+  DELIVERED: [],
+  CANCELLED: [],
 }

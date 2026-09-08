@@ -914,7 +914,16 @@
     "activeTrial": "Sinov muddati",
     "expired": "Muddati tugadi",
     "suspended": "To'xtatilgan",
-    "trial": "Sinov"
+    "trial": "Sinov",
+    "NEW": "Yangi",
+    "CONFIRMED": "Tasdiqlangan",
+    "PREPARING": "Tayyorlanmoqda",
+    "READY_FOR_DELIVERY": "Yetkazishga tayyor",
+    "COURIER_ASSIGNED": "Kuryer tayinlangan",
+    "ON_THE_WAY": "Yo'lda",
+    "ARRIVED": "Manzilga yetib keldi",
+    "DELIVERED": "Yetkazildi",
+    "CANCELLED": "Bekor qilindi"
   },
   "branches": {
     "title": "Filiallar",

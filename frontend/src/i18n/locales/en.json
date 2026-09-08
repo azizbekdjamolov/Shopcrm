@@ -909,7 +909,16 @@
     "activeTrial": "Active Trial",
     "expired": "Expired",
     "suspended": "Suspended",
-    "trial": "Trial"
+    "trial": "Trial",
+    "NEW": "New",
+    "CONFIRMED": "Confirmed",
+    "PREPARING": "Preparing",
+    "READY_FOR_DELIVERY": "Ready for delivery",
+    "COURIER_ASSIGNED": "Courier assigned",
+    "ON_THE_WAY": "On the way",
+    "ARRIVED": "Arrived",
+    "DELIVERED": "Delivered",
+    "CANCELLED": "Cancelled"
   },
   "branches": {
     "title": "Branches",

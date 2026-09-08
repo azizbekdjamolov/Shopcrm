@@ -398,6 +398,7 @@ export interface Order {
   tax_amount: number
   total_amount: number
   status: OrderStatusType
+  is_cancellable?: boolean
   payment_method?: PaymentMethodType
   payment_status: PaymentStatusType
   delivery_address?: string

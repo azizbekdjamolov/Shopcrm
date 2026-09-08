@@ -34,6 +34,15 @@ const statusColorMap: Record<string, string> = {
   refunded: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300',
   written_off: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
   picked_up: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
+  NEW: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300',
+  CONFIRMED: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
+  PREPARING: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300',
+  READY_FOR_DELIVERY: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300',
+  COURIER_ASSIGNED: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300',
+  ON_THE_WAY: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300',
+  ARRIVED: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
+  DELIVERED: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
+  CANCELLED: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
 }
 
 export function StatusBadge({ status, className }: StatusBadgeProps) {

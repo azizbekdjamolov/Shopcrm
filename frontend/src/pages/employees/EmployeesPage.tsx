@@ -19,6 +19,22 @@ const ROLES = [
   { value: 'admin', label: 'Admin', color: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300' },
 ]
 
+const ASSIGNABLE_ROLES: Record<string, string[]> = {
+  owner: ['seller', 'courier', 'manager', 'admin'],
+  admin: ['seller', 'courier', 'manager'],
+  manager: ['seller', 'courier'],
+}
+
+function getCurrentRole(): string {
+  const stored = localStorage.getItem('auth-storage')
+  if (!stored) return ''
+  try {
+    return JSON.parse(stored)?.state?.user?.role || ''
+  } catch {
+    return ''
+  }
+}
+
 async function fetchMembers() {
   const stored = localStorage.getItem('auth-storage')
   if (!stored) return []
@@ -47,6 +63,11 @@ export function EmployeesPage() {
   const [showInvite, setShowInvite] = useState(false)
   const [email, setEmail] = useState('')
   const [role, setRole] = useState('seller')
+
+  const currentRole = getCurrentRole()
+  const assignableRoles = ASSIGNABLE_ROLES[currentRole] || []
+  const visibleRoles = ROLES.filter((r) => assignableRoles.includes(r.value))
+  const canInvite = assignableRoles.length > 0
 
   const { data: members, isLoading } = useQuery({
     queryKey: ['business-members'],
@@ -110,10 +131,12 @@ export function EmployeesPage() {
       <PageHeader
         title={t('employees.teamMembers', 'Team Members')}
         action={
-          <Button onClick={() => setShowInvite(true)}>
-            <Plus className="mr-2 h-4 w-4" />
-            {t('employees.inviteMember', 'Invite Member')}
-          </Button>
+          canInvite && (
+            <Button onClick={() => setShowInvite(true)}>
+              <Plus className="mr-2 h-4 w-4" />
+              {t('employees.inviteMember', 'Invite Member')}
+            </Button>
+          )
         }
       />
 
@@ -147,7 +170,7 @@ export function EmployeesPage() {
           <div>
             <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">{t('employees.role', 'Role')}</label>
             <div className="grid grid-cols-2 gap-2">
-              {ROLES.map((r) => (
+              {visibleRoles.map((r) => (
                 <button
                   key={r.value}
                   type="button"

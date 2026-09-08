@@ -914,7 +914,16 @@
     "activeTrial": "Пробный период",
     "expired": "Истёк",
     "suspended": "Приостановлен",
-    "trial": "Пробный"
+    "trial": "Пробный",
+    "NEW": "Новый",
+    "CONFIRMED": "Подтверждён",
+    "PREPARING": "Готовится",
+    "READY_FOR_DELIVERY": "Готов к доставке",
+    "COURIER_ASSIGNED": "Курьер назначен",
+    "ON_THE_WAY": "В пути",
+    "ARRIVED": "Прибыл",
+    "DELIVERED": "Доставлен",
+    "CANCELLED": "Отменён"
   },
   "branches": {
     "title": "Филиалы",

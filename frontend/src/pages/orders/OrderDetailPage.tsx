@@ -1,8 +1,8 @@
 import { useTranslation } from 'react-i18next'
 import { useParams, useNavigate } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
-import { ArrowLeft } from 'lucide-react'
-import { ordersApi } from '@/api/orders'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { ArrowLeft, XCircle } from 'lucide-react'
+import { ordersApi, ORDER_STATUS_TRANSITIONS } from '@/api/orders'
 import { PageHeader } from '@/components/common/PageHeader'
 import { StatusBadge } from '@/components/common/StatusBadge'
 import { LoadingState } from '@/components/common/LoadingState'
@@ -10,11 +10,13 @@ import { ErrorState } from '@/components/common/ErrorState'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { formatCurrency } from '@/lib/utils'
+import toast from 'react-hot-toast'
 
 export function OrderDetailPage() {
   const { t } = useTranslation()
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
 
   const { data: order, isLoading, error, refetch } = useQuery({
     queryKey: ['order', id],
@@ -22,9 +24,34 @@ export function OrderDetailPage() {
     enabled: !!id,
   })
 
+  const invalidate = () => {
+    queryClient.invalidateQueries({ queryKey: ['order', id] })
+    queryClient.invalidateQueries({ queryKey: ['orders'] })
+  }
+
+  const statusMutation = useMutation({
+    mutationFn: (status: string) => ordersApi.updateOrderStatus(id!, status),
+    onSuccess: () => {
+      toast.success(t('common.success'))
+      invalidate()
+    },
+    onError: (err: any) => toast.error(err?.response?.data?.message || t('common.error')),
+  })
+
+  const cancelMutation = useMutation({
+    mutationFn: () => ordersApi.cancelOrder(id!),
+    onSuccess: () => {
+      toast.success(t('common.success'))
+      invalidate()
+    },
+    onError: (err: any) => toast.error(err?.response?.data?.message || t('common.error')),
+  })
+
   if (isLoading) return <LoadingState />
   if (error) return <ErrorState onRetry={refetch} />
   if (!order) return null
+
+  const nextStatuses = (ORDER_STATUS_TRANSITIONS[order.status as string] || []).filter((s) => s !== 'CANCELLED')
 
   return (
     <div className="space-y-6">
@@ -37,6 +64,45 @@ export function OrderDetailPage() {
           </Button>
         }
       />
+
+      <Card>
+        <CardHeader>
+          <CardTitle>{t('orders.orderStatus')}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-wrap items-center gap-4">
+            <StatusBadge status={order.status} />
+            {nextStatuses.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {nextStatuses.map((s) => (
+                  <Button
+                    key={s}
+                    size="sm"
+                    onClick={() => statusMutation.mutate(s)}
+                    disabled={statusMutation.isPending}
+                  >
+                    {t(`statuses.${s}`)}
+                  </Button>
+                ))}
+              </div>
+            )}
+            {order.is_cancellable && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-red-600"
+                onClick={() => {
+                  if (confirm(t('common.areYouSure'))) cancelMutation.mutate()
+                }}
+                disabled={cancelMutation.isPending}
+              >
+                <XCircle className="mr-1 h-4 w-4" />
+                {t('orders.cancelOrder')}
+              </Button>
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <Card>

@@ -14,13 +14,28 @@ from .serializers import (
 from .permissions import IsBusinessMember, IsBusinessOwner, CanManageBranch
 from apps.core.exceptions import success_response
 
+ASSIGNABLE_ROLES = {'seller', 'courier', 'manager', 'admin'}
+ROLE_ALLOWED_TARGETS = {
+    'owner': {'seller', 'courier', 'manager', 'admin'},
+    'admin': {'seller', 'courier', 'manager'},
+    'manager': {'seller', 'courier'},
+}
+
+
+def _can_assign_role(actor_role, target_role):
+    if target_role not in ASSIGNABLE_ROLES:
+        return False
+    return target_role in ROLE_ALLOWED_TARGETS.get(actor_role, set())
+
 
 class BusinessViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_permissions(self):
-        if self.action in ('add_member', 'update_member_role', 'destroy', 'update', 'partial_update'):
+        if self.action in ('destroy', 'update', 'partial_update'):
             return [permissions.IsAuthenticated(), IsBusinessOwner()]
+        if self.action in ('add_member', 'update_member_role'):
+            return [permissions.IsAuthenticated(), IsBusinessMember()]
         return super().get_permissions()
 
     def get_queryset(self):
@@ -55,6 +70,14 @@ class BusinessViewSet(viewsets.ModelViewSet):
         role = request.data.get('role', 'seller')
         if not email:
             return Response({'error': 'email is required'}, status=status.HTTP_400_BAD_REQUEST)
+        actor = BusinessUser.objects.filter(
+            business=business, user=request.user, is_active=True
+        ).first()
+        if not _can_assign_role(getattr(actor, 'role', None), role):
+            return Response(
+                {'error': 'You do not have permission to assign this role.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
         from apps.accounts.models import User
         try:
             user = User.objects.get(email=email)
@@ -64,7 +87,7 @@ class BusinessViewSet(viewsets.ModelViewSet):
             user=user, business=business,
             defaults={'role': role, 'is_active': True}
         )
-        if role in ['owner', 'admin', 'manager', 'seller', 'courier']:
+        if role in ASSIGNABLE_ROLES:
             user.role = role
             user.save(update_fields=['role'])
         return success_response(data={
@@ -82,13 +105,21 @@ class BusinessViewSet(viewsets.ModelViewSet):
         new_role = request.data.get('role')
         if not user_id or not new_role:
             return Response({'error': 'user_id and role are required'}, status=status.HTTP_400_BAD_REQUEST)
+        actor = BusinessUser.objects.filter(
+            business=business, user=request.user, is_active=True
+        ).first()
+        if not _can_assign_role(getattr(actor, 'role', None), new_role):
+            return Response(
+                {'error': 'You do not have permission to assign this role.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
         try:
             membership = BusinessUser.objects.get(business=business, user_id=user_id)
         except BusinessUser.DoesNotExist:
             return Response({'error': 'Member not found'}, status=status.HTTP_404_NOT_FOUND)
         membership.role = new_role
         membership.save(update_fields=['role'])
-        if new_role in ['owner', 'admin', 'manager', 'seller', 'courier']:
+        if new_role in ASSIGNABLE_ROLES:
             user = membership.user
             user.role = new_role
             user.save(update_fields=['role'])

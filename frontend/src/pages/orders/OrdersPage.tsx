@@ -2,14 +2,16 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
-import { Plus, Eye } from 'lucide-react'
+import { Plus, Eye, XCircle } from 'lucide-react'
 import { ordersApi } from '@/api/orders'
 import { DataTable, type Column } from '@/components/common/DataTable'
 import { PageHeader } from '@/components/common/PageHeader'
 import { StatusBadge } from '@/components/common/StatusBadge'
 import { Button } from '@/components/ui/button'
 import { formatCurrency } from '@/lib/utils'
-import { OrderStatus } from '@/types'
+import toast from 'react-hot-toast'
+
+const ORDER_STATUSES = ['NEW', 'CONFIRMED', 'PREPARING', 'READY_FOR_DELIVERY', 'COURIER_ASSIGNED', 'ON_THE_WAY', 'ARRIVED', 'DELIVERED', 'CANCELLED']
 
 export function OrdersPage() {
   const { t } = useTranslation()
@@ -31,12 +33,14 @@ export function OrdersPage() {
     mutationFn: (id: string) => ordersApi.cancelOrder(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['orders'] })
+      toast.success(t('common.success'))
     },
+    onError: (err: any) => toast.error(err?.response?.data?.message || t('common.error')),
   })
 
   const columns: Column<any>[] = [
     { key: 'order_number', label: t('orders.orderNumber'), render: (item) => <span className="font-medium text-primary-600">#{item.order_number}</span> },
-    { key: 'customer', label: t('orders.customerInfo'), render: (item) => <span className="text-gray-600 dark:text-gray-300">{item.customer?.full_name || t('pos.walkInCustomer')}</span> },
+    { key: 'customer', label: t('orders.customerInfo'), render: (item) => <span className="text-gray-600 dark:text-gray-300">{item.customer?.full_name || item.customer_name || t('pos.walkInCustomer')}</span> },
     { key: 'total_amount', label: t('orders.orderTotal'), sortable: true, render: (item) => <span className="font-medium text-gray-900 dark:text-white">{formatCurrency(item.total_amount)}</span> },
     { key: 'status', label: t('orders.orderStatus'), render: (item) => <StatusBadge status={item.status} /> },
     { key: 'created_at', label: t('common.date'), sortable: true, render: (item) => <span className="text-gray-500">{new Date(item.created_at).toLocaleDateString()}</span> },
@@ -54,7 +58,7 @@ export function OrdersPage() {
         }
       />
       <div className="flex gap-2 flex-wrap">
-        {['', ...Object.values(OrderStatus)].map((s) => (
+        {['', ...ORDER_STATUSES].map((s) => (
           <button
             key={s}
             onClick={() => { setStatusFilter(s); setPage(1); }}
@@ -76,9 +80,19 @@ export function OrdersPage() {
         onPageChange={setPage}
         onRowClick={(item) => navigate(`/orders/${item.id}`)}
         actions={(item) => (
-          <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); navigate(`/orders/${item.id}`) }}>
-            <Eye className="h-4 w-4" />
-          </Button>
+          <div className="flex items-center gap-1">
+            {item.is_cancellable && (
+              <Button variant="ghost" size="icon" onClick={(e) => {
+                e.stopPropagation()
+                if (confirm(t('common.areYouSure'))) cancelMutation.mutate(item.id)
+              }}>
+                <XCircle className="h-4 w-4 text-red-500" />
+              </Button>
+            )}
+            <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); navigate(`/orders/${item.id}`) }}>
+              <Eye className="h-4 w-4" />
+            </Button>
+          </div>
         )}
       />
     </div>
