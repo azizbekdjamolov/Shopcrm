@@ -14,7 +14,7 @@ export function Sidebar() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const { user, logout } = useAuth()
-  const { isOpen, toggle } = useSidebarStore()
+  const { isOpen, isMobile, mobileOpen, toggle, closeMobile } = useSidebarStore()
 
   const roleKey = user?.role || 'customer'
   const navItems = ROLE_SIDEBAR_ITEMS[roleKey] || ROLE_SIDEBAR_ITEMS.customer
@@ -23,16 +23,31 @@ export function Sidebar() {
     await logout()
   }
 
+  const shown = isMobile ? mobileOpen : isOpen
+
   return (
     <>
+      {isMobile && mobileOpen && (
+        <div
+          className="fixed inset-0 z-30 bg-black/50"
+          onClick={closeMobile}
+          aria-hidden="true"
+        />
+      )}
       <aside
         className={cn(
           'fixed inset-y-0 left-0 z-40 flex flex-col border-r border-gray-200 bg-white transition-all duration-300 dark:border-gray-700 dark:bg-gray-900',
-          isOpen ? 'w-64' : 'w-0 lg:w-20'
+          isMobile
+            ? shown
+              ? 'w-64'
+              : 'w-0 border-r-0'
+            : shown
+              ? 'w-64'
+              : 'w-20'
         )}
       >
         <div className="flex h-16 items-center justify-between border-b border-gray-200 px-4 dark:border-gray-700">
-          {isOpen && (
+          {shown && (
             <div className="flex items-center gap-2">
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary-600 text-white font-bold text-sm">
                 B
@@ -44,7 +59,7 @@ export function Sidebar() {
             onClick={toggle}
             className="hidden lg:flex h-8 w-8 items-center justify-center rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
           >
-            <ChevronLeft className={cn('h-5 w-5 text-gray-500 transition-transform', !isOpen && 'rotate-180')} />
+            <ChevronLeft className={cn('h-5 w-5 text-gray-500 transition-transform', shown && 'rotate-180')} />
           </button>
         </div>
 
@@ -54,6 +69,7 @@ export function Sidebar() {
               <li key={item.path}>
                 <NavLink
                   to={item.path}
+                  onClick={() => { if (isMobile) closeMobile() }}
                   className={({ isActive }) =>
                     cn(
                       'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
@@ -64,7 +80,7 @@ export function Sidebar() {
                   }
                 >
                   <item.icon className="h-5 w-5 shrink-0" />
-                  {isOpen && <span className="truncate">{t(item.translationKey)}</span>}
+                  {shown && <span className="truncate">{t(item.translationKey)}</span>}
                 </NavLink>
               </li>
             ))}
@@ -72,7 +88,7 @@ export function Sidebar() {
         </nav>
 
         <div className="border-t border-gray-200 p-4 dark:border-gray-700">
-          {isOpen ? (
+          {shown ? (
             <div className="flex items-center gap-3">
               <Avatar
                 src={user?.avatar}
