@@ -68,6 +68,10 @@ class CreateBusinessSerializer(serializers.ModelSerializer):
             business=business,
             role=BusinessUser.Role.OWNER,
         )
+        BusinessSettings.objects.get_or_create(
+            business=business,
+            defaults={'store_name': business.name, 'is_public': True},
+        )
         return business
 
 

@@ -1,0 +1,13 @@
+name: Keep Render Backend Awake
+
+on:
+  schedule:
+    - cron: '*/4 * * * *'
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping backend health endpoint
+        run: curl -sS -o /dev/null -w "health=%{http_code} time=%{time_total}s`n" --max-time 20 https://business-os-backend-170l.onrender.com/health/ || true
