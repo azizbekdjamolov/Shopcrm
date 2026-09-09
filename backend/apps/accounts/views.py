@@ -34,6 +34,25 @@ def _send_verification_email(email: str, code: str) -> None:
         f'<p style="color:#6b7280;font-size:13px">Kod 10 daqiqa amal qiladi. Email: {email}</p>'
         '</div>'
     )
+    if getattr(settings, 'EMAIL_API_KEY', ''):
+        import requests
+        resp = requests.post(
+            'https://api.resend.com/emails',
+            headers={
+                'Authorization': f'Bearer {settings.EMAIL_API_KEY}',
+                'Content-Type': 'application/json',
+            },
+            json={
+                'from': settings.DEFAULT_FROM_EMAIL,
+                'to': [email],
+                'subject': subject,
+                'html': html,
+                'text': body,
+            },
+            timeout=15,
+        )
+        resp.raise_for_status()
+        return
     mail.send_mail(
         subject,
         body,
