@@ -34,6 +34,22 @@ def _send_verification_email(email: str, code: str) -> None:
         f'<p style="color:#6b7280;font-size:13px">Kod 10 daqiqa amal qiladi. Email: {email}</p>'
         '</div>'
     )
+    if getattr(settings, 'BREVO_API_KEY', ''):
+        import requests
+        resp = requests.post(
+            'https://api.sendinblue.com/v3/smtp/email',
+            headers={'api-key': settings.BREVO_API_KEY},
+            json={
+                'sender': {'email': settings.DEFAULT_FROM_EMAIL, 'name': 'Business OS'},
+                'to': [{'email': email}],
+                'subject': subject,
+                'htmlContent': html,
+                'textContent': body,
+            },
+            timeout=15,
+        )
+        resp.raise_for_status()
+        return
     if getattr(settings, 'EMAIL_API_KEY', ''):
         import requests
         resp = requests.post(

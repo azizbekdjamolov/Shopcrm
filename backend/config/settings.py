@@ -210,6 +210,7 @@ EMAIL_USE_TLS = config('EMAIL_USE_TLS', default=False, cast=bool)
 EMAIL_USE_SSL = config('EMAIL_USE_SSL', default=False, cast=bool)
 EMAIL_TIMEOUT = config('EMAIL_TIMEOUT', default=15, cast=float)
 EMAIL_API_KEY = config('EMAIL_API_KEY', default='')
+BREVO_API_KEY = config('BREVO_API_KEY', default='')
 DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default=config('EMAIL_HOST_USER', default='no-reply@businessos.app'))
 
 SPECTACULAR_SETTINGS = {
