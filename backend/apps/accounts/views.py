@@ -6,6 +6,7 @@ from rest_framework_simplejwt.tokens import OutstandingToken, BlacklistedToken
 from django.conf import settings
 from django.core import mail
 from django.contrib.auth import get_user_model
+from datetime import datetime
 
 from .serializers import (
     RegisterSerializer,
@@ -23,17 +24,67 @@ from apps.core.exceptions import success_response
 User = get_user_model()
 
 
+def _build_verification_email_html(email: str, code: str) -> str:
+    logo_url = getattr(settings, 'EMAIL_LOGO_URL', 'https://business-os-web-0s8n.onrender.com/logo.png')
+    return f"""
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f3f4f6;padding:32px 16px">
+  <tr>
+    <td align="center">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#ffffff;border:1px solid #e5e7eb;border-radius:16px;overflow:hidden">
+        <tr>
+          <td style="padding:28px 32px 4px 32px">
+            <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+              <tr>
+                <td align="center">
+                  <img src="{logo_url}" width="72" height="72" alt="Business OS" style="border-radius:16px;display:block" />
+                  <h1 style="margin:14px 0 4px 0;font-family:Arial,sans-serif;font-size:22px;color:#111827;font-weight:bold">Business OS</h1>
+                  <p style="margin:0;font-family:Arial,sans-serif;font-size:14px;color:#6b7280">Email tasdiqlash kodi</p>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:20px 32px">
+            <p style="margin:0 0 14px 0;font-family:Arial,sans-serif;font-size:15px;line-height:22px;color:#374151">
+              Salom! <b style="color:#111827">{email}</b> manzilini tasdiqlash uchun quyidagi
+              <b>6 xonali kod</b>ni sahifaga kiriting:
+            </p>
+            <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin:16px 0">
+              <tr>
+                <td align="center" style="border:2px dashed #93c5fd;border-radius:12px;background:#eff6ff;padding:16px">
+                  <span style="font-family:Arial,sans-serif;font-size:34px;font-weight:bold;letter-spacing:10px;color:#2563eb">{code[:3]}&nbsp;&nbsp;{code[3:]}</span>
+                </td>
+              </tr>
+            </table>
+            <p style="margin:0 0 6px 0;font-family:Arial,sans-serif;font-size:13px;color:#6b7280;text-align:center">Kod <b>10 daqiqa</b> amal qiladi</p>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:0 32px">
+            <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+              <tr>
+                <td style="border-top:1px solid #eef2f7;padding:16px 0 24px 0;text-align:center">
+                  <p style="margin:0;font-family:Arial,sans-serif;font-size:12px;line-height:18px;color:#9ca3af">
+                    Bu xatni o'zingiz so'ramagan bo'lsangiz, e'tiborsiz qoldiring.<br/>
+                    © {datetime.utcnow().year} Business OS — biznesingizni boshqarish platformasi
+                  </p>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+"""
+
+
 def _send_verification_email(email: str, code: str) -> None:
-    subject = 'Business OS - Verification code'
+    subject = 'Business OS — email tasdiqlash kodi'
     body = f'Your verification code is: {code}\nIt expires in 10 minutes.'
-    html = (
-        '<div style="font-family:Arial,sans-serif;padding:24px;max-width:480px;margin:0 auto;border:1px solid #e5e7eb;border-radius:12px">'
-        '<h2 style="margin:0 0 8px;color:#111827">Business OS</h2>'
-        f'<p style="color:#374151;font-size:15px">Emailni tasdiqlash uchun quyidagi kodni kiriting:</p>'
-        f'<div style="font-size:28px;font-weight:bold;letter-spacing:6px;color:#4f46e5;margin:12px 0">{code}</div>'
-        f'<p style="color:#6b7280;font-size:13px">Kod 10 daqiqa amal qiladi. Email: {email}</p>'
-        '</div>'
-    )
+    html = _build_verification_email_html(email, code)
     if getattr(settings, 'BREVO_API_KEY', ''):
         import requests
         resp = requests.post(
