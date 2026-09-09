@@ -63,12 +63,15 @@ export function RegisterPage() {
 
   const validate = () => {
     const newErrors: Record<string, string> = {}
-    if (!form.first_name.trim()) newErrors.first_name = t('errors.required')
-    if (!form.password) newErrors.password = t('errors.required')
-    if (form.password.length < 8) newErrors.password = t('errors.passwordTooShort')
-    if (form.password !== form.password_confirm) newErrors.password_confirm = t('errors.passwordMismatch')
-    if (step === 'email' && !form.email.trim()) newErrors.email = t('errors.required')
-    else if (step === 'email' && !emailRegex.test(form.email)) newErrors.email = t('errors.emailInvalid')
+    if (step === 'email') {
+      if (!form.email.trim()) newErrors.email = t('errors.required')
+      else if (!emailRegex.test(form.email)) newErrors.email = t('errors.emailInvalid')
+    } else {
+      if (!form.first_name.trim()) newErrors.first_name = t('errors.required')
+      if (!form.password) newErrors.password = t('errors.required')
+      if (form.password.length < 8) newErrors.password = t('errors.passwordTooShort')
+      if (form.password !== form.password_confirm) newErrors.password_confirm = t('errors.passwordMismatch')
+    }
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
