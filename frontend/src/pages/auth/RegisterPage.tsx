@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useNavigate } from 'react-router-dom'
 import { useMutation } from '@tanstack/react-query'
-import { Loader2 } from 'lucide-react'
+import { Loader2, MailCheck } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import { authApi } from '@/api/auth'
 import { Button } from '@/components/ui/button'
@@ -14,6 +14,7 @@ export function RegisterPage() {
   const { t, i18n } = useTranslation()
   const navigate = useNavigate()
   const { register, isRegistering } = useAuth()
+  const [step, setStep] = useState<'email' | 'profile'>('email')
   const [form, setForm] = useState({
     first_name: '',
     last_name: '',
@@ -51,6 +52,7 @@ export function RegisterPage() {
     onSuccess: (verified) => {
       if (verified) {
         setCodeVerified(true)
+        setStep('profile')
         toast.success(t('auth.codeVerified', 'Kod tasdiqlandi'))
       } else {
         toast.error(t('errors.invalidCode', "Kod noto'g'ri yoki muddati o'tgan"))
@@ -62,11 +64,11 @@ export function RegisterPage() {
   const validate = () => {
     const newErrors: Record<string, string> = {}
     if (!form.first_name.trim()) newErrors.first_name = t('errors.required')
-    if (!form.email.trim()) newErrors.email = t('errors.required')
-    else if (!emailRegex.test(form.email)) newErrors.email = t('errors.emailInvalid')
     if (!form.password) newErrors.password = t('errors.required')
     if (form.password.length < 8) newErrors.password = t('errors.passwordTooShort')
     if (form.password !== form.password_confirm) newErrors.password_confirm = t('errors.passwordMismatch')
+    if (step === 'email' && !form.email.trim()) newErrors.email = t('errors.required')
+    else if (step === 'email' && !emailRegex.test(form.email)) newErrors.email = t('errors.emailInvalid')
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
@@ -89,14 +91,6 @@ export function RegisterPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!validate()) return
-    if (!codeSent) {
-      toast.error(t('auth.sendCodeFirst', 'Avval emailga kod yuboring'))
-      return
-    }
-    if (!codeVerified) {
-      toast.error(t('auth.verifyCodeFirst', "Avval kodni tasdiqlang"))
-      return
-    }
     register(
       {
         first_name: form.first_name.trim(),
@@ -143,119 +137,154 @@ export function RegisterPage() {
           </div>
           <CardTitle className="text-2xl">{t('auth.registerTitle')}</CardTitle>
           <CardDescription>{t('auth.registerSubtitle')}</CardDescription>
-        </CardHeader>
-        <form onSubmit={handleSubmit}>
-          <CardContent className="space-y-4">
-            <Input
-              label={t('auth.email')}
-              type="email"
-              value={form.email}
-              onChange={handleChange('email')}
-              error={errors.email}
-            />
-            <div className="grid grid-cols-2 gap-3">
-              <Input
-                label={t('auth.firstName')}
-                value={form.first_name}
-                onChange={handleChange('first_name')}
-                error={errors.first_name}
-              />
-              <Input
-                label={t('auth.lastName')}
-                value={form.last_name}
-                onChange={handleChange('last_name')}
-              />
+          <div className="mt-3 flex items-center justify-center gap-2 text-xs">
+            <div className={`flex items-center gap-1.5 rounded-full px-3 py-1 ${step === 'email' ? 'bg-primary-50 font-medium text-primary-700 dark:bg-primary-900/20 dark:text-primary-300' : 'bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-300'}`}>
+              {step === 'profile' ? <MailCheck className="h-3.5 w-3.5" /> : null}
+              <span>1. {t('auth.email')}</span>
             </div>
-            <Input
-              label={t('auth.password')}
-              type="password"
-              value={form.password}
-              onChange={handleChange('password')}
-              error={errors.password}
-            />
-            <Input
-              label={t('auth.confirmPassword')}
-              type="password"
-              value={form.password_confirm}
-              onChange={handleChange('password_confirm')}
-              error={errors.password_confirm}
-            />
+            <div className={`h-px w-8 ${step === 'profile' ? 'bg-green-500' : 'bg-gray-200 dark:bg-gray-700'}`} />
+            <div className={`flex items-center gap-1.5 rounded-full px-3 py-1 ${step === 'profile' ? 'bg-primary-50 font-medium text-primary-700 dark:bg-primary-900/20 dark:text-primary-300' : 'bg-gray-100 text-gray-400 dark:bg-gray-800'}`}>
+              <span>2. {t('auth.profile')}</span>
+            </div>
+          </div>
+        </CardHeader>
 
-            {!codeSent ? (
-              <Button
-                type="button"
-                variant="outline"
-                className="w-full"
-                onClick={handleSendCode}
-                disabled={sendCodeMutation.isPending}
-              >
-                {sendCodeMutation.isPending ? (
-                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" />{t('auth.sending')}</>
+        {step === 'email' ? (
+          <form>
+            <CardContent className="space-y-4">
+              <Input
+                label={t('auth.email')}
+                type="email"
+                value={form.email}
+                onChange={handleChange('email')}
+                error={errors.email}
+              />
+              {!codeSent ? (
+                <Button
+                  type="button"
+                  className="w-full"
+                  onClick={handleSendCode}
+                  disabled={sendCodeMutation.isPending}
+                >
+                  {sendCodeMutation.isPending ? (
+                    <><Loader2 className="mr-2 h-4 w-4 animate-spin" />{t('auth.sending')}</>
+                  ) : (
+                    t('auth.sendCode')
+                  )}
+                </Button>
+              ) : (
+                <div className="space-y-3 rounded-lg border border-sky-200 bg-sky-50 p-4 dark:border-sky-900 dark:bg-sky-950/20">
+                  <p className="text-sm text-sky-800 dark:text-sky-200">
+                    {t('auth.codeSentHint', "Emailga yuborilgan 6 xonali kodni kiriting")}: <span className="font-semibold">{form.email}</span>
+                  </p>
+                  <Input
+                    label={t('auth.verificationCode')}
+                    placeholder="000000"
+                    maxLength={6}
+                    inputMode="numeric"
+                    value={form.verification_code}
+                    onChange={handleChange('verification_code')}
+                    error={errors.verification_code}
+                  />
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      className="flex-1"
+                      variant="default"
+                      onClick={handleVerifyCode}
+                      disabled={verifyCodeMutation.isPending}
+                    >
+                      {verifyCodeMutation.isPending ? (
+                        <><Loader2 className="mr-2 h-4 w-4 animate-spin" />{t('auth.verifying')}</>
+                      ) : (
+                        t('auth.verifyCode')
+                      )}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      onClick={() => sendCodeMutation.mutate()}
+                      disabled={sendCodeMutation.isPending}
+                    >
+                      {t('auth.resendCode')}
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+            <CardFooter className="flex flex-col gap-4">
+              <p className="text-sm text-center text-gray-500 dark:text-gray-400">
+                {t('auth.hasAccount')}{' '}
+                <Link to="/login" className="text-primary-600 hover:underline dark:text-primary-400">
+                  {t('auth.loginHere')}
+                </Link>
+              </p>
+            </CardFooter>
+          </form>
+        ) : (
+          <form onSubmit={handleSubmit}>
+            <CardContent className="space-y-4">
+              <div className="flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-700 dark:border-green-900 dark:bg-green-950/20 dark:text-green-300">
+                <MailCheck className="h-4 w-4" />
+                <span>
+                  <span className="font-medium">{form.email}</span>
+                  <button
+                    type="button"
+                    className="ml-2 underline"
+                    onClick={() => {
+                      setStep('email')
+                      setCodeVerified(false)
+                    }}
+                  >
+                    {t('auth.changeEmail') ?? "O'zgartirish"}
+                  </button>
+                </span>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <Input
+                  label={t('auth.firstName')}
+                  value={form.first_name}
+                  onChange={handleChange('first_name')}
+                  error={errors.first_name}
+                />
+                <Input
+                  label={t('auth.lastName')}
+                  value={form.last_name}
+                  onChange={handleChange('last_name')}
+                />
+              </div>
+              <Input
+                label={t('auth.password')}
+                type="password"
+                value={form.password}
+                onChange={handleChange('password')}
+                error={errors.password}
+              />
+              <Input
+                label={t('auth.confirmPassword')}
+                type="password"
+                value={form.password_confirm}
+                onChange={handleChange('password_confirm')}
+                error={errors.password_confirm}
+              />
+            </CardContent>
+            <CardFooter className="flex flex-col gap-4">
+              <Button type="submit" className="w-full" disabled={isRegistering}>
+                {isRegistering ? (
+                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" />{t('auth.registering')}</>
                 ) : (
-                  t('auth.sendCode')
+                  t('auth.registerButton')
                 )}
               </Button>
-            ) : (
-              <div className="space-y-3 rounded-lg border border-sky-200 bg-sky-50 p-4 dark:border-sky-900 dark:bg-sky-950/20">
-                <p className="text-sm text-sky-800 dark:text-sky-200">
-                  {t('auth.codeSentHint', "Emailga yuborilgan 6 xonali kodni kiriting")}: <span className="font-semibold">{form.email}</span>
-                </p>
-                <Input
-                  label={t('auth.verificationCode')}
-                  placeholder="000000"
-                  maxLength={6}
-                  inputMode="numeric"
-                  value={form.verification_code}
-                  onChange={handleChange('verification_code')}
-                  error={errors.verification_code}
-                />
-                <div className="flex gap-2">
-                  <Button
-                    type="button"
-                    className="flex-1"
-                    variant="default"
-                    onClick={handleVerifyCode}
-                    disabled={verifyCodeMutation.isPending}
-                  >
-                    {verifyCodeMutation.isPending ? (
-                      <><Loader2 className="mr-2 h-4 w-4 animate-spin" />{t('auth.verifying')}</>
-                    ) : (
-                      t('auth.verifyCode')
-                    )}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    onClick={() => sendCodeMutation.mutate()}
-                    disabled={sendCodeMutation.isPending}
-                  >
-                    {t('auth.resendCode')}
-                  </Button>
-                </div>
-                {codeVerified && (
-                  <p className="text-sm font-medium text-green-600 dark:text-green-400">
-                    ✓ {t('auth.codeVerified', 'Kod tasdiqlandi')}
-                  </p>
-                )}
-              </div>
-            )}
-          </CardContent>
-          <CardFooter className="flex flex-col gap-4">
-            <Button type="submit" className="w-full" disabled={isRegistering || !codeVerified}>
-              {isRegistering ? (
-                <><Loader2 className="mr-2 h-4 w-4 animate-spin" />{t('auth.registering')}</>
-              ) : (
-                t('auth.registerButton')
-              )}
-            </Button>
-            <p className="text-sm text-center text-gray-500 dark:text-gray-400">
-              {t('auth.hasAccount')}{' '}
-              <Link to="/login" className="text-primary-600 hover:underline dark:text-primary-400">
-                {t('auth.loginHere')}
-              </Link>
-            </p>
-          </CardFooter>
-        </form>
+              <p className="text-sm text-center text-gray-500 dark:text-gray-400">
+                {t('auth.hasAccount')}{' '}
+                <Link to="/login" className="text-primary-600 hover:underline dark:text-primary-400">
+                  {t('auth.loginHere')}
+                </Link>
+              </p>
+            </CardFooter>
+          </form>
+        )}
       </Card>
     </div>
   )

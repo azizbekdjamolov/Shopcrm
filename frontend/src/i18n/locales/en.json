@@ -110,6 +110,8 @@
     "registerTitle": "Create Account",
     "loginSubtitle": "Sign in to Business OS to manage your business",
     "registerSubtitle": "Register for Business OS and grow your business",
+    "profile": "Details",
+    "changeEmail": "Change",
     "noAccount": "Don't have an account?",
     "hasAccount": "Already have an account?",
     "loginHere": "Sign in here",
