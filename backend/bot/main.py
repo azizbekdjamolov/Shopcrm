@@ -10,6 +10,7 @@ from telegram.ext import (
 
 from bot.config import BOT_TOKEN, t
 from bot.api_client import APIClient
+from apps.tgbot.models import TelegramPhoneLink, normalize_phone
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -17,6 +18,14 @@ logger = logging.getLogger(__name__)
 api = APIClient()
 
 EMAIL, PASSWORD = range(2)
+
+
+def phone_keyboard() -> ReplyKeyboardMarkup:
+    return ReplyKeyboardMarkup(
+        [[KeyboardButton('📱 Raqamni ulash', request_contact=True)]],
+        resize_keyboard=True,
+        one_time_keyboard=True,
+    )
 
 
 def get_user_data(ctx: ContextTypes.DEFAULT_TYPE) -> dict:
@@ -88,9 +97,40 @@ async def start(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
         else:
             await update.message.reply_text(
                 f"Salom, {user.first_name}! {t('welcome', lang)}\n\n"
+                f"Buyurtma berayotganda tasdiqlash kodi olish uchun pastdagi tugmani bosing.\n"
                 f"Tizimga kirish uchun: /login\n"
                 f"Yordam: /help",
+                reply_markup=phone_keyboard(),
             )
+
+
+async def handle_contact(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
+    lang = get_lang(ctx)
+    contact = update.message.contact
+    phone = normalize_phone(getattr(contact, 'phone_number', ''))
+    user = update.effective_user
+    chat_id = update.effective_chat.id
+
+    if not phone.startswith('998') or len(phone) != 12:
+        await update.message.reply_text(
+            "❌ Faqat O'zbekiston raqamlari (+998...) qo'llab-quvvatlanadi.",
+        )
+        return
+
+    TelegramPhoneLink.objects.update_or_create(
+        phone=phone,
+        defaults={
+            'telegram_user_id': user.id,
+            'telegram_username': user.username or '',
+            'chat_id': chat_id,
+        },
+    )
+    display = f"+{phone[:3]} {phone[3:5]} {phone[5:8]} {phone[8:]}"
+    await update.message.reply_text(
+        f"✅ Raqamingiz saqlandi: {display}\n\n"
+        f"Endi do'konda buyurtma berayotganda shu raqamni kiriting va 'Kod yuborish' tugmasini bosing — "
+        f"tasdiqlash kodi aynan shu Telegram'ga keladi.",
+    )
 
 
 async def help_cmd(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
@@ -408,6 +448,8 @@ def build_application(token: str = BOT_TOKEN):
         filters.Regex("^(O'zbek|Русский|English)$"),
         handle_lang_choice,
     ))
+
+    app.add_handler(MessageHandler(filters.CONTACT, handle_contact))
 
     app.add_handler(MessageHandler(
         filters.TEXT & ~filters.COMMAND & ~filters.Regex("^(O'zbek|Русский|English)$"),

@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from .models import Order, OrderItem
 from apps.products.models import Product
+from apps.tgbot.models import normalize_phone
 
 
 class OptionalUUIDField(serializers.UUIDField):
@@ -63,6 +64,14 @@ class CreateOrderSerializer(serializers.Serializer):
         if not value:
             raise serializers.ValidationError('At least one item is required.')
         return value
+
+    def validate_delivery_phone(self, value):
+        phone = normalize_phone(value)
+        if not phone.startswith('998') or len(phone) != 12:
+            raise serializers.ValidationError(
+                "Telefon raqam +998 90 123 45 67 ko'rinishida bo'lishi kerak (faqat raqamlar)."
+            )
+        return f'+{phone}'
 
 
 class OrderStatusUpdateSerializer(serializers.Serializer):

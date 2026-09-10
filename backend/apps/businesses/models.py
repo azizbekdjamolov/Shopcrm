@@ -11,7 +11,7 @@ class Business(models.Model):
     name = models.CharField(max_length=255)
     slug = models.SlugField(max_length=255, unique=True, db_index=True)
     description = models.TextField(blank=True, default='')
-    logo = models.ImageField(upload_to='businesses/logos/', blank=True, null=True)
+    logo = models.TextField(blank=True, default='')
     phone = models.CharField(max_length=20, blank=True, default='')
     email = models.EmailField(blank=True, default='')
     address = models.TextField(blank=True, default='')

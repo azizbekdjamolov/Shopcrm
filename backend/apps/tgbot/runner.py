@@ -70,6 +70,23 @@ class BotRunner:
             self._ready.set()
         loop.run_forever()
 
+    def send_message(self, chat_id, text, **kwargs) -> bool:
+        """Send a message to a chat from the bot's event loop (thread-safe)."""
+        if self.app is None or self.loop is None:
+            logger.warning('Bot app not ready; cannot send message')
+            self.last_error = 'Bot app not ready'
+            return False
+        coro = self.app.bot.send_message(chat_id=chat_id, text=text, **kwargs)
+        future = asyncio.run_coroutine_threadsafe(coro, self.loop)
+        try:
+            future.result(timeout=30)
+            return True
+        except Exception as exc:  # pragma: no cover - defensive
+            logger.exception('Bot send_message failed')
+            self.error_count += 1
+            self.last_error = f'{type(exc).__name__}: {exc}'
+            return False
+
     def submit(self, update):
         if self.app is None or self.loop is None:
             logger.warning('Bot app not ready; dropping update')

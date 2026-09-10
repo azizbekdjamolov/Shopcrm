@@ -9,10 +9,11 @@ class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, min_length=8)
     password_confirm = serializers.CharField(write_only=True)
     verification_code = serializers.CharField(write_only=True)
+    logo = serializers.CharField(required=False, allow_blank=True, default='')
 
     class Meta:
         model = User
-        fields = ('email', 'first_name', 'last_name', 'business_name', 'password', 'password_confirm', 'verification_code')
+        fields = ('email', 'first_name', 'last_name', 'business_name', 'logo', 'password', 'password_confirm', 'verification_code')
 
     def validate(self, attrs):
         if attrs['password'] != attrs['password_confirm']:
@@ -32,6 +33,7 @@ class RegisterSerializer(serializers.ModelSerializer):
         validated_data.pop('verification_code')
         password = validated_data.pop('password')
         business_name = validated_data.pop('business_name', '')
+        logo = validated_data.pop('logo', '')
         user = User.objects.create_user(**validated_data)
         user.set_password(password)
         user.role = User.Role.CUSTOMER
@@ -52,6 +54,7 @@ class RegisterSerializer(serializers.ModelSerializer):
                 slug=slug,
                 phone=user.phone or '',
                 email=user.email,
+                logo=logo,
             )
             BusinessUser.objects.create(
                 user=user,

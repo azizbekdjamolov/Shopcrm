@@ -61,7 +61,7 @@ class Product(AbstractBusinessModel):
     supplier = models.ForeignKey(
         Supplier, on_delete=models.SET_NULL, null=True, blank=True, related_name='products'
     )
-    image = models.ImageField(upload_to='products/', blank=True, null=True)
+    image = models.TextField(blank=True, default='')
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.ACTIVE, db_index=True)
 
     class Meta(AbstractBusinessModel.Meta):
